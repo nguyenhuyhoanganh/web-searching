@@ -59,9 +59,29 @@ DEFAULT_HEADERS = {
     "Accept-Language": "en-US,en;q=0.9",
 }
 
+# SSL verification — disabled automatically on first SSLError (common in corporate proxies).
+_verify_ssl = True
+
+
+def _get(url: str, timeout: int = 15) -> requests.Response:
+    """HTTP GET with automatic SSL fallback."""
+    global _verify_ssl
+    try:
+        resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=timeout, verify=_verify_ssl)
+        resp.raise_for_status()
+        return resp
+    except requests.exceptions.SSLError:
+        if _verify_ssl:
+            logger.warning("SSL verification failed. Retrying without SSL verification...")
+            _verify_ssl = False
+            resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=timeout, verify=False)
+            resp.raise_for_status()
+            return resp
+        raise
+
 
 def _search_ddgs(query: str, max_results: int, region: str) -> list[dict]:
-    with DDGS() as ddgs:
+    with DDGS(verify=_verify_ssl) as ddgs:
         results = list(ddgs.text(query, region=region, max_results=max_results))
     return [
         {"title": r.get("title", ""), "url": r.get("href", ""), "snippet": r.get("body", "")}
@@ -70,7 +90,7 @@ def _search_ddgs(query: str, max_results: int, region: str) -> list[dict]:
 
 
 def _search_ddgs_news(query: str, max_results: int, region: str) -> list[dict]:
-    with DDGS() as ddgs:
+    with DDGS(verify=_verify_ssl) as ddgs:
         results = list(ddgs.news(query, region=region, max_results=max_results))
     return [
         {
@@ -85,7 +105,7 @@ def _search_ddgs_news(query: str, max_results: int, region: str) -> list[dict]:
 
 
 def _search_ddgs_answers(query: str) -> list[dict]:
-    with DDGS() as ddgs:
+    with DDGS(verify=_verify_ssl) as ddgs:
         results = list(ddgs.answers(query))
     return [
         {"text": r.get("text", ""), "url": r.get("url", ""), "source": r.get("source", "")}
@@ -94,10 +114,8 @@ def _search_ddgs_answers(query: str) -> list[dict]:
 
 
 def _search_google_fallback(query: str, max_results: int) -> list[dict]:
-    """Fallback: parse Google search HTML when DuckDuckGo is rate-limited."""
     url = f"https://www.google.com/search?q={quote_plus(query)}&num={max_results}"
-    resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=15)
-    resp.raise_for_status()
+    resp = _get(url)
     soup = BeautifulSoup(resp.text, "html.parser")
 
     results = []
@@ -121,10 +139,8 @@ def _search_google_fallback(query: str, max_results: int) -> list[dict]:
 
 
 def _search_duckduckgo_html_fallback(query: str, max_results: int) -> list[dict]:
-    """Fallback: parse the DuckDuckGo HTML endpoint."""
     url = f"https://html.duckduckgo.com/html/?q={quote_plus(query)}"
-    resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=15)
-    resp.raise_for_status()
+    resp = _get(url)
     soup = BeautifulSoup(resp.text, "html.parser")
 
     results = []
