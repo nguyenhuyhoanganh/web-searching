@@ -31,10 +31,6 @@ SKILL_DIR="$(git rev-parse --show-toplevel)/.cline/skills/web-research"
 
 If `git` is unavailable: `find . -path "*/.cline/skills/web-research/scripts/web_search.py" -print -quit 2>/dev/null`
 
-If a `.venv/` exists in the skill folder, prefer its interpreter — it already has all deps:
-- Linux/macOS: `"$SKILL_DIR/.venv/bin/python"`
-- Windows: `"$SKILL_DIR\.venv\Scripts\python.exe"`
-
 ### Step 3: Check dependencies — install if missing
 
 Run this **one command** to check all required + recommended packages at once:
@@ -49,12 +45,6 @@ $PYTHON_CMD -c "import requests; from bs4 import BeautifulSoup; from ddgs import
 
 ```bash
 $PYTHON_CMD -m pip install requests beautifulsoup4 ddgs trafilatura lxml
-```
-
-Or use the setup script (creates a `.venv` and installs all deps):
-
-```bash
-bash "$SKILL_DIR/setup.sh"
 ```
 
 Then re-run the check command above to confirm.

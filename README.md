@@ -16,8 +16,7 @@ Can you use MCP? See branch `claude/cline-search-web-skills-yc36cf` (the MCP ser
 ├── scripts/
 │   ├── web_search.py               # search (DuckDuckGo, Google fallback) — no API key
 │   └── web_read.py                 # extract main content (trafilatura + BeautifulSoup)
-├── requirements.txt
-└── setup.sh
+└── requirements.txt
 .clinerules                         # pointer so Cline reads SKILL.md when needed
 ```
 
@@ -28,20 +27,22 @@ preloaded at startup; the full `SKILL.md` is read only when the skill activates;
 ## Install
 
 ```bash
-cd .cline/skills/web-research
-bash setup.sh        # create .venv and install deps (run once)
+pip install requests beautifulsoup4 ddgs trafilatura lxml
 
 # Test
-.venv/bin/python scripts/web_search.py "python 3.13 release date" -n 3
-.venv/bin/python scripts/web_read.py "https://example.com"
+python3 .cline/skills/web-research/scripts/web_search.py "python 3.13 release date" -n 3
+python3 .cline/skills/web-research/scripts/web_read.py "https://example.com"
 ```
 
 Requires Python 3.10+, internet access, **no API key**.
 
+No `setup.sh` needed — `SKILL.md` instructs the agent to check and install deps automatically on
+first use.
+
 ## Sharing with your team
 
 Copy the `.cline/skills/web-research/` directory and the `.clinerules` file into any workspace.
-Run `bash .cline/skills/web-research/setup.sh` and Cline will auto-detect the skill.
+Cline will auto-detect the skill and install dependencies on first use.
 
 Alternatively, copy `web-research/` to `~/.cline/skills/` (global) so it applies to all projects.
 
