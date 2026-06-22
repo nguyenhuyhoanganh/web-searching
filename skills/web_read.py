@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Web Read Skill for Cline
-Đọc và trích xuất nội dung chính từ trang web.
+Web Read skill script.
+Fetches a URL and extracts the main readable content.
 
 Usage:
     python web_read.py "https://example.com"
@@ -88,7 +88,7 @@ def extract_with_beautifulsoup(html: str, selector: str | None = None) -> dict:
             text_parts = [el.get_text(separator="\n", strip=True) for el in elements]
             content = "\n\n".join(text_parts)
         else:
-            content = f"Selector '{selector}' không tìm thấy element nào."
+            content = f"Selector '{selector}' matched no elements."
     else:
         main_content = (
             soup.find("article")
@@ -135,7 +135,7 @@ def read_webpage(
         result = extract_with_trafilatura(html, url)
         if result and result["content"]:
             if len(result["content"]) > max_length:
-                result["content"] = result["content"][:max_length] + "\n\n... [Nội dung bị cắt ngắn]"
+                result["content"] = result["content"][:max_length] + "\n\n... [content truncated]"
                 result["truncated"] = True
             result["url"] = url
             result["method"] = "trafilatura"
@@ -143,7 +143,7 @@ def read_webpage(
 
     result = extract_with_beautifulsoup(html, selector)
     if len(result["content"]) > max_length:
-        result["content"] = result["content"][:max_length] + "\n\n... [Nội dung bị cắt ngắn]"
+        result["content"] = result["content"][:max_length] + "\n\n... [content truncated]"
         result["truncated"] = True
     result["url"] = url
     result["method"] = "beautifulsoup"
@@ -164,14 +164,14 @@ def format_result(result: dict, output_json: bool = False) -> str:
     output.append(f"URL: {result.get('url', '')}")
     output.append(f"Extraction: {result.get('method', 'unknown')}")
     output.append("-" * 80)
-    output.append(result.get("content", "Không có nội dung."))
+    output.append(result.get("content", "No content."))
     if result.get("truncated"):
-        output.append(f"\n[Nội dung đã bị cắt ngắn]")
+        output.append("\n[content was truncated]")
     return "\n".join(output)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Web Read Skill for Cline")
+    parser = argparse.ArgumentParser(description="Web read skill")
     parser.add_argument("url", help="URL to read")
     parser.add_argument("--selector", "-s", help="CSS selector to extract specific elements")
     parser.add_argument("--max-length", "-m", type=int, default=MAX_CONTENT_LENGTH,
@@ -190,7 +190,7 @@ def main():
                 print(json.dumps(links, ensure_ascii=False, indent=2))
             else:
                 if not links:
-                    print("Không tìm thấy link nào.")
+                    print("No links found.")
                 else:
                     for i, link in enumerate(links, 1):
                         print(f"[{i}] {link['text']}")
@@ -202,7 +202,7 @@ def main():
         print(f"HTTP Error: {e}", file=sys.stderr)
         sys.exit(1)
     except requests.exceptions.ConnectionError:
-        print(f"Connection Error: Không thể kết nối tới {args.url}", file=sys.stderr)
+        print(f"Connection Error: could not connect to {args.url}", file=sys.stderr)
         sys.exit(1)
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)

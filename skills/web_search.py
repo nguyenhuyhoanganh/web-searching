@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Web Search Skill for Cline
-Tìm kiếm thông tin trên web sử dụng DuckDuckGo (không cần API key).
-Có fallback qua Google HTML search nếu DuckDuckGo bị rate-limit.
+Web Search skill script.
+Searches the web via DuckDuckGo (no API key). Falls back to DuckDuckGo HTML
+and Google HTML scraping when the DuckDuckGo API is rate-limited.
 
 Usage:
     python web_search.py "query" [--max-results N] [--region vn-vi]
@@ -19,7 +19,7 @@ import argparse
 import json
 import sys
 import textwrap
-from urllib.parse import quote_plus, urljoin
+from urllib.parse import quote_plus
 
 import requests
 from bs4 import BeautifulSoup
@@ -71,7 +71,7 @@ def _search_ddgs_answers(query: str) -> list[dict]:
 
 
 def _search_google_fallback(query: str, max_results: int) -> list[dict]:
-    """Fallback: parse Google search HTML khi DuckDuckGo bị rate-limit."""
+    """Fallback: parse Google search HTML when DuckDuckGo is rate-limited."""
     url = f"https://www.google.com/search?q={quote_plus(query)}&num={max_results}"
     resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=15)
     resp.raise_for_status()
@@ -98,7 +98,7 @@ def _search_google_fallback(query: str, max_results: int) -> list[dict]:
 
 
 def _search_duckduckgo_html_fallback(query: str, max_results: int) -> list[dict]:
-    """Fallback: parse DuckDuckGo HTML search."""
+    """Fallback: parse the DuckDuckGo HTML endpoint."""
     url = f"https://html.duckduckgo.com/html/?q={quote_plus(query)}"
     resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=15)
     resp.raise_for_status()
@@ -140,16 +140,15 @@ def search_web(query: str, max_results: int = 5, region: str = "wt-wt") -> list[
     except Exception as e:
         errors.append(f"Google: {e}")
 
-    raise RuntimeError(f"Tất cả phương thức tìm kiếm đều thất bại: {'; '.join(errors)}")
+    raise RuntimeError(f"All search backends failed: {'; '.join(errors)}")
 
 
 def search_news(query: str, max_results: int = 5, region: str = "wt-wt") -> list[dict]:
     if HAS_DDGS:
         try:
             return _search_ddgs_news(query, max_results, region)
-        except Exception as e:
+        except Exception:
             pass
-
     return search_web(f"{query} news", max_results, region)
 
 
@@ -167,7 +166,7 @@ def format_results(results: list[dict], mode: str = "text") -> str:
         return json.dumps(results, ensure_ascii=False, indent=2)
 
     if not results:
-        return "Không tìm thấy kết quả nào."
+        return "No results found."
 
     output = []
     for i, r in enumerate(results, 1):
@@ -188,11 +187,11 @@ def format_results(results: list[dict], mode: str = "text") -> str:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Web Search Skill for Cline")
+    parser = argparse.ArgumentParser(description="Web search skill")
     parser.add_argument("query", help="Search query")
     parser.add_argument("--max-results", "-n", type=int, default=5, help="Number of results (default: 5)")
     parser.add_argument("--region", "-r", default="wt-wt", help="Region code, e.g. vn-vi, us-en (default: wt-wt)")
-    parser.add_argument("--news", action="store_true", help="Search news instead of web")
+    parser.add_argument("--news", action="store_true", help="Search news instead of the web")
     parser.add_argument("--answers", action="store_true", help="Get instant answers")
     parser.add_argument("--json", action="store_true", help="Output as JSON")
 

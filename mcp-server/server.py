@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """MCP server "web-skills": web search & web page reading tools.
 
-Chạy:
-    python server.py            # stdio transport (mặc định, cho Cline)
+Run:
+    python server.py              # stdio transport (default, for Cline)
     python server.py --port 8080  # SSE transport
 
-Cấu hình trong Cline MCP settings:
+Configure in Cline MCP settings:
     {
       "mcpServers": {
         "web-skills": {
@@ -41,13 +41,13 @@ try:
 except ImportError:
     HAS_TRAFILATURA = False
 
-# stdio transport dùng stdout cho giao thức JSON-RPC. Mọi log phải ra stderr.
+# stdio transport uses stdout for the JSON-RPC protocol. All logs must go to stderr.
 logging.basicConfig(level=logging.WARNING, stream=sys.stderr)
 
-# Giới hạn ký tự cho mỗi kết quả tool trả về (best practice MCP: cắt ngắn có kiểm soát).
+# Character limit per tool result (MCP best practice: bounded, controlled truncation).
 CHARACTER_LIMIT = 25_000
 
-# Trần cứng để tránh request quá tải.
+# Hard caps to avoid overloading a request.
 MAX_SEARCH_RESULTS = 20
 MAX_PAGES_TO_READ = 5
 HTTP_TIMEOUT = 30
@@ -66,7 +66,7 @@ mcp = FastMCP("web-skills")
 
 
 # --------------------------------------------------------------------------- #
-# Search backends (DuckDuckGo API → DuckDuckGo HTML → Google HTML fallback)
+# Search backends (DuckDuckGo API -> DuckDuckGo HTML -> Google HTML fallback)
 # --------------------------------------------------------------------------- #
 
 def _search_ddgs(query: str, max_results: int, region: str) -> list[dict]:
@@ -149,19 +149,19 @@ def _search_google_html(query: str, max_results: int) -> list[dict]:
 
 
 def _do_search(query: str, max_results: int, region: str) -> list[dict]:
-    """Tìm kiếm web với fallback nhiều tầng. Raise nếu mọi backend đều hỏng."""
+    """Web search with layered fallback. Raises if every backend fails."""
     errors = []
     if HAS_DDGS:
         try:
             return _search_ddgs(query, max_results, region)
-        except Exception as e:  # noqa: BLE001 - gom lỗi để fallback
+        except Exception as e:  # noqa: BLE001 - collect error and fall back
             errors.append(f"DuckDuckGo API: {e}")
     for name, fn in (("DuckDuckGo HTML", _search_duckduckgo_html), ("Google HTML", _search_google_html)):
         try:
             return fn(query, max_results)
         except Exception as e:  # noqa: BLE001
             errors.append(f"{name}: {e}")
-    raise RuntimeError("Mọi backend tìm kiếm đều thất bại → " + "; ".join(errors))
+    raise RuntimeError("All search backends failed -> " + "; ".join(errors))
 
 
 # --------------------------------------------------------------------------- #
@@ -201,7 +201,7 @@ def _extract_beautifulsoup(html: str, selector: str | None = None) -> dict:
         elements = soup.select(selector)
         content = (
             "\n\n".join(el.get_text(separator="\n", strip=True) for el in elements)
-            if elements else f"Selector '{selector}' không khớp element nào."
+            if elements else f"Selector '{selector}' matched no elements."
         )
     else:
         main = (
@@ -223,24 +223,24 @@ def _fetch(url: str, timeout: int = HTTP_TIMEOUT) -> str:
 
 
 def _clamp(content: str, limit: int) -> str:
-    """Cắt ngắn có hướng dẫn (best practice: nói cho model biết cách lấy thêm)."""
+    """Truncate with guidance (best practice: tell the model how to get more)."""
     limit = min(limit, CHARACTER_LIMIT)
     if len(content) <= limit:
         return content
     return (
         content[:limit]
-        + f"\n\n... [Đã cắt ở {limit} ký tự. Dùng `selector` để lấy đúng phần cần, "
-        "hoặc tăng `max_length` nếu thật sự cần nhiều hơn.]"
+        + f"\n\n... [Truncated at {limit} characters. Use `selector` to target the part you need, "
+        "or raise `max_length` only if you truly need more.]"
     )
 
 
 def _format_search_results(results: list[dict], query: str) -> str:
     if not results:
         return (
-            f'Không có kết quả cho "{query}". '
-            "Thử đổi từ khóa, bỏ bớt qualifier, hoặc dùng thuật ngữ tiếng Anh."
+            f'No results for "{query}". '
+            "Try different keywords, drop a qualifier, or use English terms."
         )
-    lines = [f'Tìm thấy {len(results)} kết quả cho "{query}":', ""]
+    lines = [f'Found {len(results)} results for "{query}":', ""]
     for i, r in enumerate(results, 1):
         lines.append(f"[{i}] {r.get('title', r.get('text', 'N/A'))}")
         if r.get("url"):
@@ -273,31 +273,31 @@ def web_search(
     region: str = "wt-wt",
     search_type: str = "web",
 ) -> str:
-    """Tìm kiếm trên web và trả về danh sách tiêu đề + URL + đoạn trích.
+    """Search the web and return a list of titles + URLs + snippets.
 
-    Dùng khi cần tìm thông tin cập nhật, kiểm chứng một dữ kiện, hoặc tra cứu lỗi.
-    KHÔNG kết luận chỉ từ đoạn trích — mở `web_read` trên URL đáng tin nhất để xác nhận.
+    Use when you need current information, to verify a fact, or to look up an error.
+    Do NOT conclude from snippets alone — open `web_read` on the most trustworthy URL to confirm.
 
     Args:
-        query: Từ khóa tìm kiếm. Hỗ trợ toán tử "cụm chính xác" và site:domain.
-        max_results: Số kết quả (1–20, mặc định 5).
-        region: Mã vùng, vd "vn-vi" (Việt Nam), "us-en" (Mỹ), "wt-wt" (toàn cầu).
-        search_type: "web" (mặc định), "news" (tin tức), hoặc "answers" (dữ kiện nhanh).
+        query: Search query. Supports "exact phrase" and site:domain operators.
+        max_results: Number of results (1-20, default 5).
+        region: Region code, e.g. "vn-vi" (Vietnam), "us-en" (US), "wt-wt" (global).
+        search_type: "web" (default), "news", or "answers" (instant facts).
 
     Returns:
-        Danh sách kết quả dạng text, mỗi mục có tiêu đề, URL và đoạn trích.
+        A text list of results, each with a title, URL, and snippet.
     """
     if not query.strip():
-        return "Lỗi: `query` rỗng."
+        return "Error: `query` is empty."
     max_results = max(1, min(max_results, MAX_SEARCH_RESULTS))
     if search_type not in ("web", "news", "answers"):
-        return "Lỗi: `search_type` phải là 'web', 'news', hoặc 'answers'."
+        return "Error: `search_type` must be 'web', 'news', or 'answers'."
 
     try:
         if search_type == "news" and HAS_DDGS:
             try:
                 return _clamp(_format_search_results(_search_ddgs_news(query, max_results, region), query), CHARACTER_LIMIT)
-            except Exception:  # noqa: BLE001 - rơi về web search thường
+            except Exception:  # noqa: BLE001 - fall back to regular web search
                 pass
         if search_type == "answers" and HAS_DDGS:
             try:
@@ -307,7 +307,7 @@ def web_search(
         results = _do_search(query, max_results, region)
         return _clamp(_format_search_results(results, query), CHARACTER_LIMIT)
     except Exception as e:  # noqa: BLE001
-        return f"Lỗi tìm kiếm: {e}"
+        return f"Search error: {e}"
 
 
 @mcp.tool(
@@ -323,33 +323,33 @@ def web_read(
     selector: str | None = None,
     extract_links: bool = False,
 ) -> str:
-    """Tải một URL và trích nội dung chính (bỏ menu/quảng cáo/footer).
+    """Fetch a URL and extract its main content (strips menus/ads/footer).
 
-    Dùng để đọc bài viết, tài liệu, blog, hoặc xác minh thông tin từ một nguồn cụ thể.
-    Lưu ý: chỉ đọc HTML tĩnh — trang render bằng JavaScript có thể thiếu nội dung.
+    Use to read an article, documentation, or blog, or to verify information from a specific source.
+    Note: reads static HTML only — JavaScript-rendered pages may come back incomplete.
 
     Args:
-        url: Địa chỉ trang web (http/https).
-        max_length: Số ký tự tối đa trả về (mặc định và trần là 25000).
-        selector: CSS selector để lấy đúng phần (vd "article", "div.content", "#main").
-        extract_links: Nếu True, trả về danh sách link trên trang thay vì nội dung.
+        url: Web page address (http/https).
+        max_length: Max characters to return (default and hard cap: 25000).
+        selector: CSS selector to grab a specific part (e.g. "article", "div.content", "#main").
+        extract_links: If True, return the list of links on the page instead of the content.
 
     Returns:
-        Tiêu đề + URL + nội dung đã trích, hoặc danh sách link, hoặc thông báo lỗi.
+        Title + URL + extracted content, or a list of links, or an error message.
     """
     if not url.startswith(("http://", "https://")):
-        return "Lỗi: `url` phải bắt đầu bằng http:// hoặc https://"
+        return "Error: `url` must start with http:// or https://"
 
     try:
         html = _fetch(url)
     except requests.exceptions.HTTPError as e:
-        return f"Lỗi HTTP khi tải {url}: {e} (trang có thể chặn bot hoặc cần đăng nhập)"
+        return f"HTTP error fetching {url}: {e} (the page may block bots or require login)"
     except requests.exceptions.ConnectionError:
-        return f"Lỗi kết nối: không tới được {url}"
+        return f"Connection error: could not reach {url}"
     except requests.exceptions.Timeout:
-        return f"Hết thời gian chờ: {url} không phản hồi trong {HTTP_TIMEOUT}s"
+        return f"Timeout: {url} did not respond within {HTTP_TIMEOUT}s"
     except Exception as e:  # noqa: BLE001
-        return f"Lỗi khi tải {url}: {e}"
+        return f"Error fetching {url}: {e}"
 
     if extract_links:
         soup = BeautifulSoup(html, "html.parser")
@@ -365,8 +365,8 @@ def web_read(
                 links.append(f"[{len(links) + 1}] {text}\n    {href}")
                 seen.add(href)
         if not links:
-            return "Không tìm thấy link nào trên trang."
-        return _clamp(f"Tìm thấy {len(links)} link:\n\n" + "\n".join(links), CHARACTER_LIMIT)
+            return "No links found on the page."
+        return _clamp(f"Found {len(links)} links:\n\n" + "\n".join(links), CHARACTER_LIMIT)
 
     result = None
     if HAS_TRAFILATURA and not selector:
@@ -399,32 +399,32 @@ def search_and_read(
     max_content_length: int = 8000,
     region: str = "wt-wt",
 ) -> str:
-    """Tìm kiếm web RỒI tự động đọc nội dung các trang kết quả đầu — gộp 1 bước.
+    """Search the web AND automatically read the top result pages — one step.
 
-    Hữu ích khi cần nghiên cứu sâu hoặc đối chiếu nhiều nguồn cho một câu hỏi.
-    Mỗi truy vấn nên có một mục tiêu rõ ràng; tránh nhồi nhiều ý vào một query.
+    Useful for deeper research or cross-checking several sources for one question.
+    Each query should have one clear goal; avoid cramming several ideas into one query.
 
     Args:
-        query: Từ khóa tìm kiếm (hỗ trợ "cụm chính xác", site:domain).
-        max_results: Số trang sẽ đọc (1–5, mặc định 3).
-        max_content_length: Số ký tự tối đa mỗi trang (mặc định 8000).
-        region: Mã vùng tìm kiếm.
+        query: Search query (supports "exact phrase", site:domain).
+        max_results: Number of pages to read (1-5, default 3).
+        max_content_length: Max characters per page (default 8000).
+        region: Search region code.
 
     Returns:
-        Với mỗi trang: tiêu đề, URL, đoạn trích và nội dung đã trích.
+        For each page: title, URL, snippet, and the extracted content.
     """
     if not query.strip():
-        return "Lỗi: `query` rỗng."
+        return "Error: `query` is empty."
     max_results = max(1, min(max_results, MAX_PAGES_TO_READ))
 
     try:
         results = _do_search(query, max_results, region)
     except Exception as e:  # noqa: BLE001
-        return f"Lỗi tìm kiếm: {e}"
+        return f"Search error: {e}"
     if not results:
-        return f'Không có kết quả cho "{query}".'
+        return f'No results for "{query}".'
 
-    out = [f'Nghiên cứu "{query}" — đọc {len(results)} trang đầu:\n']
+    out = [f'Researching "{query}" — reading the top {len(results)} pages:\n']
     for i, sr in enumerate(results, 1):
         out += ["=" * 60, f"[{i}] {sr.get('title', 'N/A')}", f"URL: {sr.get('url', '')}"]
         if sr.get("snippet"):
@@ -432,7 +432,7 @@ def search_and_read(
         out.append("-" * 30)
         page_url = sr.get("url", "")
         if not page_url:
-            out.append("(không có URL)")
+            out.append("(no URL)")
             continue
         try:
             html = _fetch(page_url, timeout=SEARCH_TIMEOUT)
@@ -443,15 +443,15 @@ def search_and_read(
                 )
             if not content:
                 content = _extract_beautifulsoup(html).get("content", "")
-            out.append(_clamp(content, max_content_length) if content else "(không trích được nội dung)")
+            out.append(_clamp(content, max_content_length) if content else "(could not extract content)")
         except Exception as e:  # noqa: BLE001
-            out.append(f"(lỗi đọc trang: {e})")
+            out.append(f"(error reading page: {e})")
     return _clamp("\n".join(out), CHARACTER_LIMIT)
 
 
 def main():
     parser = argparse.ArgumentParser(description="web-skills MCP server")
-    parser.add_argument("--port", type=int, default=None, help="Port cho SSE transport (mặc định: stdio)")
+    parser.add_argument("--port", type=int, default=None, help="Port for SSE transport (default: stdio)")
     args = parser.parse_args()
     if args.port:
         mcp.run(transport="sse", sse_params={"port": args.port})

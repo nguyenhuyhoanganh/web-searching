@@ -1,29 +1,31 @@
-# Web Skills for Cline
+# Web Skills for Cline (MCP server)
 
-Bộ skills tìm kiếm web và đọc nội dung trang web cho Cline extension. Dành cho bản Cline fork không có sẵn web tools.
+Web search and web-page reading tools for the Cline extension — for forked Cline builds that ship no
+web tools. This branch provides an **MCP server**; the agent calls the tools natively. A blocked-MCP,
+skill-only variant lives on branch `claude/cline-web-skill-no-mcp`.
 
 ## Features
 
-| Tool | Mô tả |
-|------|--------|
-| `web_search` | Tìm kiếm web qua DuckDuckGo (không cần API key). Hỗ trợ web, news, instant answers |
-| `web_read` | Đọc và trích xuất nội dung chính từ URL. Hỗ trợ CSS selector, extract links |
-| `search_and_read` | Kết hợp search + read: tìm kiếm và tự động đọc top kết quả |
+| Tool | Description |
+|------|-------------|
+| `web_search` | Web search via DuckDuckGo (no API key). Supports web, news, instant answers |
+| `web_read` | Fetch a URL and extract the main content. Supports CSS selector and link extraction |
+| `search_and_read` | Combine search + read: search and auto-read the top results |
 
 ## Quick Start
 
-### Cách 1: MCP Server (Khuyến nghị)
+### Option 1: MCP server (recommended)
 
-MCP server cho phép Cline sử dụng web skills như native tools.
+The MCP server lets Cline use the web skills as native tools.
 
 ```bash
 # 1. Setup
 bash setup_mcp.sh
 
-# 2. Thêm vào Cline MCP settings (Ctrl+Shift+P → "Cline: MCP Settings")
+# 2. Add to Cline MCP settings (Ctrl+Shift+P -> "Cline: MCP Settings")
 ```
 
-Cấu hình MCP settings:
+MCP settings:
 
 ```json
 {
@@ -37,15 +39,15 @@ Cấu hình MCP settings:
 }
 ```
 
-### Cách 2: CLI Scripts (Fallback)
+### Option 2: CLI scripts (fallback)
 
-Nếu Cline fork không hỗ trợ MCP, Cline vẫn có thể chạy các scripts qua terminal.
+If your Cline build does not support MCP, Cline can still run the scripts via the terminal.
 
 ```bash
 # 1. Setup
 bash skills/setup.sh
 
-# 2. Sử dụng
+# 2. Use
 source .venv/bin/activate
 python skills/web_search.py "python asyncio tutorial"
 python skills/web_read.py "https://docs.python.org/3/library/asyncio.html"
@@ -56,97 +58,78 @@ python skills/web_read.py "https://docs.python.org/3/library/asyncio.html"
 ### web_search.py
 
 ```bash
-# Tìm kiếm cơ bản
 python skills/web_search.py "Spring Boot 3 migration guide"
-
-# Nhiều kết quả hơn
 python skills/web_search.py "React hooks best practices" --max-results 10
-
-# Tìm kiếm tin tức
 python skills/web_search.py "Java 21 release" --news
-
-# Tìm kiếm vùng Việt Nam
-python skills/web_search.py "lập trình Python" --region vn-vi
-
-# Instant answers
+python skills/web_search.py "Python programming" --region vn-vi
 python skills/web_search.py "Python datetime format" --answers
-
-# Output JSON
 python skills/web_search.py "query" --json
 ```
 
 ### web_read.py
 
 ```bash
-# Đọc nội dung trang web
-python skills/web_read.py "https://spring.io/blog/2024/11/21/spring-boot-3-4-0-available-now"
-
-# Giới hạn độ dài nội dung
+python skills/web_read.py "https://spring.io/blog/..."
 python skills/web_read.py "https://docs.python.org/3/tutorial/" --max-length 5000
-
-# Trích xuất phần cụ thể bằng CSS selector
 python skills/web_read.py "https://example.com" --selector "article.post-content"
-
-# Lấy danh sách links
 python skills/web_read.py "https://example.com" --links
-
-# Chỉ dùng BeautifulSoup (bỏ qua trafilatura)
-python skills/web_read.py "https://example.com" --raw
-
-# Output JSON
+python skills/web_read.py "https://example.com" --raw      # BeautifulSoup only
 python skills/web_read.py "https://example.com" --json
 ```
 
 ## MCP Tools Reference
 
-Khi dùng qua MCP server, Cline có thể gọi trực tiếp:
+When used via the MCP server, Cline can call these directly:
 
 ### `web_search`
 
-| Parameter | Type | Default | Mô tả |
-|-----------|------|---------|--------|
-| `query` | string | (required) | Từ khóa tìm kiếm |
-| `max_results` | int | 5 | Số kết quả (max 20) |
-| `region` | string | "wt-wt" | Vùng tìm kiếm |
-| `search_type` | string | "web" | "web", "news", hoặc "answers" |
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `query` | string | (required) | Search query |
+| `max_results` | int | 5 | Number of results (max 20) |
+| `region` | string | "wt-wt" | Search region |
+| `search_type` | string | "web" | "web", "news", or "answers" |
 
 ### `web_read`
 
-| Parameter | Type | Default | Mô tả |
-|-----------|------|---------|--------|
-| `url` | string | (required) | URL trang web |
-| `max_length` | int | 25000 | Độ dài nội dung tối đa (cũng là trần cứng) |
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `url` | string | (required) | Web page URL |
+| `max_length` | int | 25000 | Max content length (also the hard cap) |
 | `selector` | string | null | CSS selector |
-| `extract_links` | bool | false | Chỉ lấy links |
+| `extract_links` | bool | false | Return links only |
 
 ### `search_and_read`
 
-| Parameter | Type | Default | Mô tả |
-|-----------|------|---------|--------|
-| `query` | string | (required) | Từ khóa tìm kiếm |
-| `max_results` | int | 3 | Số trang đọc (max 5) |
-| `max_content_length` | int | 8000 | Độ dài mỗi trang |
-| `region` | string | "wt-wt" | Vùng tìm kiếm |
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `query` | string | (required) | Search query |
+| `max_results` | int | 3 | Pages to read (max 5) |
+| `max_content_length` | int | 8000 | Content length per page |
+| `region` | string | "wt-wt" | Search region |
 
-## Cách hoạt động với Cline
+All tools are read-only and carry MCP annotations (`readOnlyHint`, `openWorldHint`). Each result is
+capped at 25000 characters with guided truncation.
 
-File `.clinerules` đã được cấu hình để hướng dẫn Cline:
+## How it works with Cline
 
-- **Tự động tìm kiếm** khi user cung cấp thông tin cần verify
-- **Tự động đọc** khi user cung cấp URL
-- **Suy luận query** thông minh dựa trên ngữ cảnh cuộc trò chuyện
-- **Trích dẫn nguồn** khi trả lời từ kết quả web
+`.clinerules` instructs Cline to:
+
+- **Search automatically** when the user provides content to verify
+- **Read automatically** when the user provides a URL
+- **Derive the query** intelligently from the conversation context (one goal per query, precise terms)
+- **Cite the source** when answering from web results, with a TRUE/FALSE/OUTDATED verdict
 
 ## Requirements
 
 - Python 3.10+
-- Không cần API key (sử dụng DuckDuckGo)
-- Cần kết nối internet
+- No API key (uses DuckDuckGo)
+- Internet access
 
 ## Dependencies
 
-- `duckduckgo-search` - Tìm kiếm DuckDuckGo
-- `requests` - HTTP client
-- `beautifulsoup4` - HTML parsing
-- `trafilatura` - Trích xuất nội dung thông minh
-- `mcp[cli]` - MCP SDK (chỉ cho MCP server)
+- `ddgs` — DuckDuckGo search
+- `requests` — HTTP client
+- `beautifulsoup4` — HTML parsing
+- `trafilatura` — smart content extraction
+- `mcp[cli]` — MCP SDK (MCP server only)
