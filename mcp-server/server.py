@@ -50,6 +50,19 @@ logging.basicConfig(
 )
 logger = logging.getLogger("web-skills")
 
+if not HAS_DDGS:
+    logger.warning(
+        "Package 'ddgs' is not installed — DuckDuckGo API search is disabled. "
+        "Falling back to HTML scraping (less reliable). "
+        "Install it:  pip install ddgs"
+    )
+if not HAS_TRAFILATURA:
+    logger.warning(
+        "Package 'trafilatura' is not installed — smart content extraction is disabled. "
+        "Falling back to BeautifulSoup (less accurate). "
+        "Install it:  pip install trafilatura lxml"
+    )
+
 # Character limit per tool result (MCP best practice: bounded, controlled truncation).
 CHARACTER_LIMIT = 25_000
 
