@@ -1,12 +1,13 @@
 # Cline pointer → web-research skill
 
-Dự án này có một Agent Skill tên **web-research** tại `web-research/SKILL.md`.
+This project includes an Agent Skill named **web-research** at `web-research/SKILL.md`.
 
-Khi cần **tìm kiếm web, đọc nội dung trang, hoặc kiểm chứng thông tin** — ví dụ user đưa nội dung
-cần verify, hỏi về phiên bản/tin tức/giá mới nhất, đưa URL cần đọc, gặp lỗi cần tra, hay nhắc tới
-công nghệ/thuật ngữ cần kiểm tra theo nguồn cập nhật — hãy **đọc `web-research/SKILL.md` và làm
-theo** (kể cả `web-research/reference/search-strategy.md` khi cần thiết kế truy vấn hoặc kiểm chứng).
+When you need to **search the web, read page content, or verify information** — e.g. the user gives
+content to verify, asks about the latest version/news/price, provides a URL to read, hits an error
+to look up, or mentions a technology/term that should be checked against up-to-date sources — **read
+`web-research/SKILL.md` and follow it** (including `web-research/reference/search-strategy.md` when
+you need to design a query or verify claims).
 
-Tinh thần: **không search bừa.** Bóc tách yêu cầu → quyết định có thực sự cần search không → mỗi
-truy vấn một mục tiêu, dùng thuật ngữ chính xác → đọc nguồn gốc, không tin mỗi đoạn trích → đối
-chiếu khi quan trọng → trả lời kèm URL và phán quyết ĐÚNG/SAI/CẦN CẬP NHẬT.
+Principle: **do not search blindly.** Decompose the request → decide whether a search is actually
+needed → one goal per query, using precise terms → read the original source, not just the snippet →
+cross-check when it matters → answer with the URL and a TRUE/FALSE/OUTDATED verdict.

@@ -5,64 +5,67 @@ description: Searches the web and reads web pages to find and fact-check current
 
 # Web Research
 
-Tìm kiếm web và đọc nội dung trang để lấy/kiểm chứng thông tin, qua 2 script trong `scripts/`.
-Gọi chúng bằng terminal (`execute_command`) — không cần MCP, không cần API key.
+Search the web and read page content to find or verify information, using the two scripts in
+`scripts/`. Invoke them from the terminal (`execute_command`) — no MCP and no API key required.
 
-**Nguyên tắc cốt lõi: không search bừa.** Mỗi lần search phải trả lời được một câu hỏi cụ thể.
-Nếu không nói được "đang đi tìm chính xác điều gì" thì đừng search.
+**Core principle: do not search blindly.** Every search must answer a specific question. If you
+cannot state "exactly what am I trying to find," do not search.
 
-## Khi nào dùng — khi nào không
+## When to use — when not to
 
-Dùng khi: thông tin thay đổi theo thời gian (phiên bản mới nhất, release, giá, tin tức); dữ kiện/
-con số/API cụ thể bạn không chắc 100%; user đưa nội dung cần kiểm chứng; user đưa URL cần đọc; lỗi/
-thông báo lỗi cần tra; công nghệ/thuật ngữ bạn nhớ mơ hồ.
+Use it when: information changes over time (latest version, release, price, news); a specific
+fact/number/API you are not 100% sure of; the user gives content to verify; the user gives a URL to
+read; an error message to look up; a technology or term you only vaguely remember.
 
-KHÔNG dùng (trả lời thẳng) khi: kiến thức ổn định bạn đã chắc; câu trả lời đã nằm trong codebase/
-ngữ cảnh (đọc file thay vì search); yêu cầu thuần suy luận/tính toán.
+Do NOT use it (answer directly) when: stable knowledge you are confident about; the answer is
+already in the codebase/context (read the file instead of searching); pure reasoning or computation.
 
-## Quy trình (theo thứ tự)
+## Workflow (in order)
 
-1. **Bóc tách yêu cầu**: liệt kê các mệnh đề cần kiểm chứng, thực thể, phiên bản, mốc thời gian.
-2. **Quyết định có cần search không.** Không cần → trả lời luôn.
-3. **Thiết kế truy vấn** — một truy vấn một mục tiêu (chi tiết: `reference/search-strategy.md`).
-4. **Chạy `web_search`**, đọc kết quả: ưu tiên nguồn chính thống, để ý *ngày* và *domain*.
-5. **`web_read` nguồn đáng tin nhất** để xác nhận — không kết luận chỉ từ đoạn trích.
-6. **Đối chiếu ≥ 2 nguồn** khi thông tin quan trọng hoặc các nguồn mâu thuẫn.
-7. **Tinh chỉnh & lặp** nếu kết quả kém (đổi từ khóa/qualifier/nguồn, tối đa ~3 vòng).
-8. **Kết luận + trích nguồn (URL)**, kèm phán quyết: **ĐÚNG / SAI / CẦN CẬP NHẬT / KHÔNG ĐỦ BẰNG CHỨNG**.
+1. **Decompose the request**: list the claims to verify, entities, versions, and time markers.
+2. **Decide whether a search is even needed.** If not, answer directly.
+3. **Design the query** — one goal per query (details: `reference/search-strategy.md`).
+4. **Run `web_search`** and read the results: prefer authoritative sources, note the *date* and *domain*.
+5. **`web_read` the most trustworthy source** to confirm — never conclude from snippets alone.
+6. **Cross-check 2+ sources** when the information is important or sources disagree.
+7. **Refine and iterate** if results are weak (change keywords/qualifiers/source, ~3 rounds max).
+8. **Conclude and cite (URL)**, with an explicit verdict: **TRUE / FALSE / OUTDATED / INSUFFICIENT EVIDENCE**.
 
-Khi user dán nội dung để verify hoặc cần thiết kế truy vấn tốt, đọc `reference/search-strategy.md`
-(có bảng ví dụ Tốt/Tệ, toán tử tìm kiếm, quy trình kiểm chứng từng tuyên bố, và lưu ý bảo mật).
+When the user pastes content to verify, or you need to craft a good query, read
+`reference/search-strategy.md` (good-vs-bad examples, search operators, a claim-verification
+workflow, and query-privacy guidance).
 
-## Chạy script
+## Running the scripts
 
-Chạy từ thư mục skill này. Ưu tiên `python` trong `.venv` nếu đã `bash setup.sh`; nếu không, dùng `python3`.
+Run from this skill directory. Prefer the `.venv` interpreter if you ran `bash setup.sh`; otherwise
+use `python3`.
 
 ```bash
-# Tìm kiếm
+# Search
 python3 scripts/web_search.py "Spring Boot latest version Java 21 support" -n 5
-python3 scripts/web_search.py "<query>" --news          # tin tức
-python3 scripts/web_search.py "<query>" --region vn-vi  # nội dung Việt Nam
-python3 scripts/web_search.py "<query>" --json          # JSON để tự parse
+python3 scripts/web_search.py "<query>" --news          # news
+python3 scripts/web_search.py "<query>" --region vn-vi  # Vietnam content
+python3 scripts/web_search.py "<query>" --json          # JSON for parsing
 
-# Đọc trang
-python3 scripts/web_read.py "https://..."               # trích nội dung chính
-python3 scripts/web_read.py "<url>" --selector "article" # lấy đúng phần theo CSS
+# Read a page
+python3 scripts/web_read.py "https://..."               # extract main content
+python3 scripts/web_read.py "<url>" --selector "article" # extract a specific part via CSS
 python3 scripts/web_read.py "<url>" --max-length 5000
-python3 scripts/web_read.py "<url>" --links             # liệt kê link trên trang
+python3 scripts/web_read.py "<url>" --links             # list links on the page
 ```
 
-`web_search`: `-n/--max-results` (mặc định 5), `-r/--region`, `--news`, `--answers`, `--json`.
-`web_read`: `-s/--selector`, `-m/--max-length` (mặc định 50000), `--raw`, `--links`, `--json`.
+`web_search`: `-n/--max-results` (default 5), `-r/--region`, `--news`, `--answers`, `--json`.
+`web_read`: `-s/--selector`, `-m/--max-length` (default 50000), `--raw`, `--links`, `--json`.
 
-Lưu ý: `web_read` chỉ đọc HTML tĩnh — trang render bằng JavaScript có thể thiếu nội dung.
+Note: `web_read` only reads static HTML — JavaScript-rendered pages may come back incomplete.
 
-## Bảo mật truy vấn
+## Query privacy
 
-Truy vấn được gửi tới công cụ tìm kiếm bên ngoài. **Không bao giờ** đưa bí mật, token, tên khách
-hàng, hostname nội bộ, hay đoạn code độc quyền vào query — chỉ tìm bằng thuật ngữ công khai, chung.
+Queries are sent to an external search engine. **Never** put secrets, tokens, customer names,
+internal hostnames, or proprietary code into a query — search only with public, generic terms.
 
-## Trình bày kết quả
+## Presenting results
 
-Trích nguồn (URL) cho mỗi dữ kiện lấy từ web; nêu *ngày* khi thông tin nhạy cảm về thời gian; đi
-thẳng kết luận trước, chi tiết sau. Không bịa — không tìm thấy thì nói rõ "không đủ bằng chứng".
+Cite the source (URL) for every fact taken from the web; state the *date* when the information is
+time-sensitive; lead with the conclusion, then details. Do not fabricate — if nothing is found, say
+so plainly ("insufficient evidence").
