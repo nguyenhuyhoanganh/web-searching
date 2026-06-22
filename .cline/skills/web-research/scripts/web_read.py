@@ -66,14 +66,22 @@ FETCH_RETRIES = 3
 
 def fetch_page(url: str, timeout: int = 30, retries: int = FETCH_RETRIES) -> str:
     last_error = None
+    verify_ssl = True
     for attempt in range(1, retries + 1):
         try:
-            logger.debug("Fetching %s (attempt %d/%d)", url, attempt, retries)
-            response = requests.get(url, headers=DEFAULT_HEADERS, timeout=timeout, allow_redirects=True)
+            logger.debug("Fetching %s (attempt %d/%d, verify_ssl=%s)", url, attempt, retries, verify_ssl)
+            response = requests.get(url, headers=DEFAULT_HEADERS, timeout=timeout, allow_redirects=True, verify=verify_ssl)
             response.raise_for_status()
             response.encoding = response.apparent_encoding or "utf-8"
             logger.info("Successfully fetched %s (%d chars)", url, len(response.text))
             return response.text
+        except requests.exceptions.SSLError as e:
+            if verify_ssl:
+                logger.warning("SSL verification failed for %s: %s. Retrying without SSL verification...", url, e)
+                verify_ssl = False
+                continue
+            last_error = e
+            logger.error("SSL error for %s even without verification: %s", url, e)
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
             last_error = e
             if attempt < retries:
