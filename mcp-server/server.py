@@ -23,6 +23,7 @@ import logging
 import re
 import sys
 import textwrap
+import time
 from urllib.parse import quote_plus, urljoin
 
 import requests
@@ -42,7 +43,12 @@ except ImportError:
     HAS_TRAFILATURA = False
 
 # stdio transport uses stdout for the JSON-RPC protocol. All logs must go to stderr.
-logging.basicConfig(level=logging.WARNING, stream=sys.stderr)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    stream=sys.stderr,
+)
+logger = logging.getLogger("web-skills")
 
 # Character limit per tool result (MCP best practice: bounded, controlled truncation).
 CHARACTER_LIMIT = 25_000
@@ -52,6 +58,7 @@ MAX_SEARCH_RESULTS = 20
 MAX_PAGES_TO_READ = 5
 HTTP_TIMEOUT = 30
 SEARCH_TIMEOUT = 15
+FETCH_RETRIES = 3
 
 DEFAULT_HEADERS = {
     "User-Agent": (
@@ -153,13 +160,21 @@ def _do_search(query: str, max_results: int, region: str) -> list[dict]:
     errors = []
     if HAS_DDGS:
         try:
-            return _search_ddgs(query, max_results, region)
+            logger.info("Searching via DDGS API: %r", query)
+            results = _search_ddgs(query, max_results, region)
+            logger.info("DDGS returned %d results", len(results))
+            return results
         except Exception as e:  # noqa: BLE001 - collect error and fall back
+            logger.warning("DDGS API failed: %s", e)
             errors.append(f"DuckDuckGo API: {e}")
     for name, fn in (("DuckDuckGo HTML", _search_duckduckgo_html), ("Google HTML", _search_google_html)):
         try:
-            return fn(query, max_results)
+            logger.info("Trying %s fallback", name)
+            results = fn(query, max_results)
+            logger.info("%s returned %d results", name, len(results))
+            return results
         except Exception as e:  # noqa: BLE001
+            logger.warning("%s fallback failed: %s", name, e)
             errors.append(f"{name}: {e}")
     raise RuntimeError("All search backends failed -> " + "; ".join(errors))
 
@@ -215,11 +230,25 @@ def _extract_beautifulsoup(html: str, selector: str | None = None) -> dict:
     return {"title": title, "content": content}
 
 
-def _fetch(url: str, timeout: int = HTTP_TIMEOUT) -> str:
-    resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=timeout, allow_redirects=True)
-    resp.raise_for_status()
-    resp.encoding = resp.apparent_encoding or "utf-8"
-    return resp.text
+def _fetch(url: str, timeout: int = HTTP_TIMEOUT, retries: int = FETCH_RETRIES) -> str:
+    last_error = None
+    for attempt in range(1, retries + 1):
+        try:
+            resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=timeout, allow_redirects=True)
+            resp.raise_for_status()
+            resp.encoding = resp.apparent_encoding or "utf-8"
+            return resp.text
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+            last_error = e
+            if attempt < retries:
+                wait = attempt * 2
+                logger.warning("Attempt %d/%d failed for %s: %s. Retrying in %ds...", attempt, retries, url, e, wait)
+                time.sleep(wait)
+            else:
+                logger.error("All %d fetch attempts failed for %s: %s", retries, url, e)
+        except requests.exceptions.HTTPError:
+            raise
+    raise last_error
 
 
 def _clamp(content: str, limit: int) -> str:
@@ -345,9 +374,9 @@ def web_read(
     except requests.exceptions.HTTPError as e:
         return f"HTTP error fetching {url}: {e} (the page may block bots or require login)"
     except requests.exceptions.ConnectionError:
-        return f"Connection error: could not reach {url}"
+        return f"Connection error: could not reach {url} (retried {FETCH_RETRIES} times)"
     except requests.exceptions.Timeout:
-        return f"Timeout: {url} did not respond within {HTTP_TIMEOUT}s"
+        return f"Timeout: {url} did not respond within {HTTP_TIMEOUT}s (retried {FETCH_RETRIES} times)"
     except Exception as e:  # noqa: BLE001
         return f"Error fetching {url}: {e}"
 

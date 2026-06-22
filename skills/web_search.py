@@ -17,18 +17,34 @@ Examples:
 
 import argparse
 import json
+import logging
 import sys
 import textwrap
 from urllib.parse import quote_plus
 
-import requests
-from bs4 import BeautifulSoup
+try:
+    import requests
+    from bs4 import BeautifulSoup
+except ImportError as e:
+    _pkg = {"bs4": "beautifulsoup4"}.get(e.name, e.name)
+    print(f"ERROR: Missing required package '{_pkg}'.", file=sys.stderr)
+    print("Install dependencies first:", file=sys.stderr)
+    print("  pip install requests beautifulsoup4", file=sys.stderr)
+    print("Or run the setup script:  bash setup.sh", file=sys.stderr)
+    sys.exit(1)
 
 try:
     from ddgs import DDGS
     HAS_DDGS = True
 except ImportError:
     HAS_DDGS = False
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    stream=sys.stderr,
+)
+logger = logging.getLogger("web_search")
 
 DEFAULT_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
@@ -126,18 +142,32 @@ def search_web(query: str, max_results: int = 5, region: str = "wt-wt") -> list[
 
     if HAS_DDGS:
         try:
-            return _search_ddgs(query, max_results, region)
+            logger.info("Searching via DDGS API: %r", query)
+            results = _search_ddgs(query, max_results, region)
+            logger.info("DDGS returned %d results", len(results))
+            return results
         except Exception as e:
+            logger.warning("DDGS API failed: %s", e)
             errors.append(f"DDGS: {e}")
+    else:
+        logger.info("ddgs package not installed, skipping DDGS API")
 
     try:
-        return _search_duckduckgo_html_fallback(query, max_results)
+        logger.info("Trying DuckDuckGo HTML fallback")
+        results = _search_duckduckgo_html_fallback(query, max_results)
+        logger.info("DDG HTML returned %d results", len(results))
+        return results
     except Exception as e:
+        logger.warning("DDG HTML fallback failed: %s", e)
         errors.append(f"DDG HTML: {e}")
 
     try:
-        return _search_google_fallback(query, max_results)
+        logger.info("Trying Google HTML fallback")
+        results = _search_google_fallback(query, max_results)
+        logger.info("Google HTML returned %d results", len(results))
+        return results
     except Exception as e:
+        logger.warning("Google HTML fallback failed: %s", e)
         errors.append(f"Google: {e}")
 
     raise RuntimeError(f"All search backends failed: {'; '.join(errors)}")

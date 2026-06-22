@@ -120,6 +120,14 @@ capped at 25000 characters with guided truncation.
 - **Derive the query** intelligently from the conversation context (one goal per query, precise terms)
 - **Cite the source** when answering from web results, with a TRUE/FALSE/OUTDATED verdict
 
+## Robustness
+
+- **Dependency checking**: scripts detect missing packages on startup and print install instructions
+- **Retry logic**: `web_read` and the MCP server retry connection errors up to 3 times with exponential backoff (2s, 4s)
+- **Logging**: all scripts log to stderr with timestamps for debugging (`[INFO]` for normal operations, `[WARNING]` for retries, `[ERROR]` for failures)
+- **Search fallback chain**: DDGS API → DuckDuckGo HTML scrape → Google HTML scrape
+- **Python alias detection**: `.clinerules` guides Cline to detect `python3` / `python` / `py` automatically
+
 ## Requirements
 
 - Python 3.10+
@@ -128,8 +136,9 @@ capped at 25000 characters with guided truncation.
 
 ## Dependencies
 
-- `ddgs` — DuckDuckGo search
-- `requests` — HTTP client
-- `beautifulsoup4` — HTML parsing
-- `trafilatura` — smart content extraction
+- `ddgs` — DuckDuckGo search (optional — falls back to HTML scraping)
+- `requests` — HTTP client (required)
+- `beautifulsoup4` — HTML parsing (required)
+- `trafilatura` — smart content extraction (optional — falls back to BeautifulSoup)
+- `lxml` — fast HTML parser for trafilatura
 - `mcp[cli]` — MCP SDK (MCP server only)

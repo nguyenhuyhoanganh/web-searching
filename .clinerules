@@ -11,6 +11,57 @@ citations. **Never search blindly.**
 
 ---
 
+## 0. FALLBACK: CLI scripts (if MCP is unavailable)
+
+If the MCP server is not running, use the CLI scripts in `skills/` via the terminal.
+
+### Detect Python
+
+Different machines use different Python commands. Run these in order and use the **first one that
+works**:
+
+```bash
+python3 --version 2>/dev/null || python --version 2>/dev/null || py --version 2>/dev/null
+```
+
+Store the working command (e.g. `PYTHON_CMD=python3`). If a `.venv/` directory exists beside the
+scripts, prefer its interpreter: `.venv/bin/python` (Linux/macOS) or `.venv\Scripts\python` (Windows).
+
+### Locate the scripts
+
+The scripts live relative to this repo root:
+
+```
+skills/web_search.py
+skills/web_read.py
+```
+
+To resolve the path dynamically from any working directory:
+
+```bash
+SCRIPT_DIR="$(git rev-parse --show-toplevel)/skills"
+$PYTHON_CMD "$SCRIPT_DIR/web_search.py" "query"
+$PYTHON_CMD "$SCRIPT_DIR/web_read.py" "https://..."
+```
+
+### Check dependencies
+
+Before the first run, verify required packages are installed:
+
+```bash
+$PYTHON_CMD -c "import requests; from bs4 import BeautifulSoup; print('OK')"
+```
+
+If that fails, install them:
+
+```bash
+$PYTHON_CMD -m pip install requests beautifulsoup4 ddgs trafilatura lxml
+```
+
+Or run the setup script: `bash skills/setup.sh`
+
+---
+
 ## 1. WHEN to search — WHEN NOT to
 
 ### Search when:
@@ -104,5 +155,5 @@ Beware SEO spam, AI-generated filler, stale docs. Always check the **publication
 Queries are sent to an external search engine. **Never** put secrets, tokens, customer names,
 internal hostnames, or proprietary code into a query — search only with public, generic terms.
 
-> Note: if the `web-skills` MCP server is unavailable, equivalent scripts can run via the terminal:
-> `python skills/web_search.py "<query>"` and `python skills/web_read.py "<url>"`.
+> Note: if the `web-skills` MCP server is unavailable, see **section 0** above for CLI fallback
+> instructions (Python alias detection, path resolution, dependency check).
