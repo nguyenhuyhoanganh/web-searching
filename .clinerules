@@ -14,29 +14,19 @@ citations. **Never search blindly.**
 ## 0. FALLBACK: CLI scripts (if MCP is unavailable)
 
 If the MCP server is not running, use the CLI scripts in `skills/` via the terminal.
+**You MUST run these checks the first time you use the fallback in a session.** Do not skip.
 
-### Detect Python
-
-Different machines use different Python commands. Run these in order and use the **first one that
-works**:
+### Step 1: Detect the Python command
 
 ```bash
 python3 --version 2>/dev/null || python --version 2>/dev/null || py --version 2>/dev/null
 ```
 
-Store the working command (e.g. `PYTHON_CMD=python3`). If a `.venv/` directory exists beside the
-scripts, prefer its interpreter: `.venv/bin/python` (Linux/macOS) or `.venv\Scripts\python` (Windows).
+Use the first command that succeeds (version >= 3.10). Store it — e.g. `PYTHON_CMD=python3`.
+If a `.venv/` directory exists beside the scripts, prefer its interpreter: `.venv/bin/python`
+(Linux/macOS) or `.venv\Scripts\python` (Windows).
 
-### Locate the scripts
-
-The scripts live relative to this repo root:
-
-```
-skills/web_search.py
-skills/web_read.py
-```
-
-To resolve the path dynamically from any working directory:
+### Step 2: Locate the scripts
 
 ```bash
 SCRIPT_DIR="$(git rev-parse --show-toplevel)/skills"
@@ -44,21 +34,28 @@ $PYTHON_CMD "$SCRIPT_DIR/web_search.py" "query"
 $PYTHON_CMD "$SCRIPT_DIR/web_read.py" "https://..."
 ```
 
-### Check dependencies
+### Step 3: Check dependencies — install if missing
 
-Before the first run, verify required packages are installed:
+Run this **one command** to check all required + recommended packages:
 
 ```bash
-$PYTHON_CMD -c "import requests; from bs4 import BeautifulSoup; print('OK')"
+$PYTHON_CMD -c "import requests; from bs4 import BeautifulSoup; from ddgs import DDGS; import trafilatura; print('ALL OK')"
 ```
 
-If that fails, install them:
+**If it prints `ALL OK`** → skip to section 1.
+
+**If it fails** → install everything in one go:
 
 ```bash
 $PYTHON_CMD -m pip install requests beautifulsoup4 ddgs trafilatura lxml
 ```
 
 Or run the setup script: `bash skills/setup.sh`
+
+Then re-run the check command to confirm.
+
+> **Do not skip installation.** `ddgs` provides the primary search engine; `trafilatura` provides
+> accurate content extraction. Without them the scripts fall back to less reliable methods.
 
 ---
 
