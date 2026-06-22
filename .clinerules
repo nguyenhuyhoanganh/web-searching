@@ -1,0 +1,71 @@
+# Web Search & Web Read Skills
+
+Bạn có quyền truy cập các web skills sau thông qua MCP tools hoặc CLI commands.
+
+## Khi nào sử dụng Web Skills
+
+### Tự động sử dụng `web_search` khi:
+- User cung cấp thông tin cần verify (kiểm chứng tính chính xác)
+- User hỏi về phiên bản mới nhất của library/framework/tool
+- User hỏi về best practices, conventions mà bạn không chắc chắn
+- User cung cấp thông tin mà bạn cần kiểm tra xem có cập nhật không
+- Cần tìm documentation, API reference, hoặc hướng dẫn
+- Cần tìm solution cho error message hoặc bug cụ thể
+- User nhắc đến công nghệ/tool mà bạn chưa biết hoặc không chắc chắn
+
+### Tự động sử dụng `web_read` khi:
+- User cung cấp URL và muốn bạn đọc nội dung
+- Sau khi `web_search` trả về kết quả, cần đọc chi tiết một trang cụ thể
+- Cần đọc documentation từ một URL cụ thể
+- Cần verify nội dung từ một nguồn cụ thể
+
+### Sử dụng `search_and_read` khi:
+- Cần nghiên cứu sâu một chủ đề (tìm + đọc luôn)
+- Cần so sánh thông tin từ nhiều nguồn
+- User yêu cầu verify thông tin và cần bằng chứng chi tiết
+
+## Cách sử dụng (MCP Tools)
+
+Nếu MCP server `web-skills` đã được cấu hình, sử dụng trực tiếp qua MCP tools:
+- `web_search(query, max_results, region, search_type)`
+- `web_read(url, max_length, selector, extract_links)`
+- `search_and_read(query, max_results, max_content_length, region)`
+
+## Cách sử dụng (CLI Fallback)
+
+Nếu MCP không khả dụng, sử dụng qua terminal commands:
+
+```bash
+# Activate virtual environment trước
+source /path/to/web-searching/.venv/bin/activate
+
+# Tìm kiếm web
+python /path/to/web-searching/skills/web_search.py "search query"
+python /path/to/web-searching/skills/web_search.py "query" --max-results 10
+python /path/to/web-searching/skills/web_search.py "query" --news
+python /path/to/web-searching/skills/web_search.py "query" --region vn-vi
+
+# Đọc trang web
+python /path/to/web-searching/skills/web_read.py "https://example.com"
+python /path/to/web-searching/skills/web_read.py "https://example.com" --max-length 5000
+python /path/to/web-searching/skills/web_read.py "https://example.com" --selector "article"
+python /path/to/web-searching/skills/web_read.py "https://example.com" --links
+```
+
+## Chiến lược tìm kiếm thông minh
+
+Khi user cung cấp thông tin, tự suy ra query tìm kiếm phù hợp:
+
+1. **Verify thông tin kỹ thuật**: Tìm kiếm "[technology] [version] [feature] official documentation"
+2. **Tìm lỗi/bug**: Tìm kiếm "[error message exact]" hoặc "[technology] [error keyword] solution"
+3. **Best practices**: Tìm kiếm "[technology] best practices [year]" hoặc "[technology] recommended approach [topic]"
+4. **So sánh**: Tìm kiếm "[tech A] vs [tech B] [context]"
+5. **Tin tức/updates**: Sử dụng search_type="news" hoặc --news flag
+
+## Quy tắc quan trọng
+
+- Luôn nêu rõ nguồn (URL) khi trích dẫn thông tin từ web
+- Nếu kết quả tìm kiếm mâu thuẫn nhau, đọc thêm chi tiết từ nhiều nguồn
+- Ưu tiên nguồn chính thức (official docs, GitHub repo, blog chính thức)
+- Khi verify thông tin của user, nói rõ kết quả verify (đúng/sai/cần cập nhật)
+- Không bịa thông tin - nếu không tìm thấy, nói rõ là không tìm thấy
