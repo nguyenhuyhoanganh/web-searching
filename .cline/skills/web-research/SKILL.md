@@ -11,6 +11,67 @@ Search the web and read page content to find or verify information, using the tw
 **Core principle: do not search blindly.** Every search must answer a specific question. If you
 cannot state "exactly what am I trying to find," do not search.
 
+## Environment setup (run once before first use)
+
+### 1. Detect the Python command
+
+Different machines use different Python aliases. Run these in order and use the **first one that
+succeeds** (need Python 3.10+):
+
+```bash
+python3 --version 2>/dev/null || python --version 2>/dev/null || py --version 2>/dev/null
+```
+
+Store the working command for later (e.g. `PYTHON_CMD=python3`).
+
+### 2. Locate the scripts
+
+The scripts live inside this skill directory:
+
+```
+.cline/skills/web-research/scripts/web_search.py
+.cline/skills/web-research/scripts/web_read.py
+```
+
+To resolve the path dynamically from any working directory, use the repo root:
+
+```bash
+SKILL_DIR="$(git rev-parse --show-toplevel)/.cline/skills/web-research"
+```
+
+If `git` is unavailable, search for the skill directory:
+
+```bash
+find . -path "*/.cline/skills/web-research/scripts/web_search.py" -print -quit 2>/dev/null
+```
+
+### 3. Check / install dependencies
+
+Before the first run, verify required packages:
+
+```bash
+$PYTHON_CMD -c "import requests; from bs4 import BeautifulSoup; print('OK')"
+```
+
+If that fails, install them (the setup script handles this automatically):
+
+```bash
+bash "$SKILL_DIR/setup.sh"
+```
+
+Or install manually:
+
+```bash
+$PYTHON_CMD -m pip install requests beautifulsoup4 ddgs trafilatura lxml
+```
+
+If a `.venv/` directory exists in the skill folder, prefer its interpreter:
+
+```bash
+"$SKILL_DIR/.venv/bin/python"          # Linux / macOS
+"$SKILL_DIR\.venv\Scripts\python.exe"  # Windows
+```
+
 ## When to use — when not to
 
 Use it when: information changes over time (latest version, release, price, news); a specific
@@ -37,27 +98,27 @@ workflow, and query-privacy guidance).
 
 ## Running the scripts
 
-Run from this skill directory. Prefer the `.venv` interpreter if you ran `bash setup.sh`; otherwise
-use `python3`.
+Use the detected Python command and resolved script directory from the setup section above.
 
 ```bash
 # Search
-python3 scripts/web_search.py "Spring Boot latest version Java 21 support" -n 5
-python3 scripts/web_search.py "<query>" --news          # news
-python3 scripts/web_search.py "<query>" --region vn-vi  # Vietnam content
-python3 scripts/web_search.py "<query>" --json          # JSON for parsing
+$PYTHON_CMD "$SKILL_DIR/scripts/web_search.py" "Spring Boot latest version Java 21 support" -n 5
+$PYTHON_CMD "$SKILL_DIR/scripts/web_search.py" "<query>" --news          # news
+$PYTHON_CMD "$SKILL_DIR/scripts/web_search.py" "<query>" --region vn-vi  # Vietnam content
+$PYTHON_CMD "$SKILL_DIR/scripts/web_search.py" "<query>" --json          # JSON for parsing
 
 # Read a page
-python3 scripts/web_read.py "https://..."               # extract main content
-python3 scripts/web_read.py "<url>" --selector "article" # extract a specific part via CSS
-python3 scripts/web_read.py "<url>" --max-length 5000
-python3 scripts/web_read.py "<url>" --links             # list links on the page
+$PYTHON_CMD "$SKILL_DIR/scripts/web_read.py" "https://..."               # extract main content
+$PYTHON_CMD "$SKILL_DIR/scripts/web_read.py" "<url>" --selector "article" # CSS selector
+$PYTHON_CMD "$SKILL_DIR/scripts/web_read.py" "<url>" --max-length 5000
+$PYTHON_CMD "$SKILL_DIR/scripts/web_read.py" "<url>" --links             # list links
 ```
 
 `web_search`: `-n/--max-results` (default 5), `-r/--region`, `--news`, `--answers`, `--json`.
 `web_read`: `-s/--selector`, `-m/--max-length` (default 50000), `--raw`, `--links`, `--json`.
 
 Note: `web_read` only reads static HTML — JavaScript-rendered pages may come back incomplete.
+Connection errors are retried automatically up to 3 times with backoff. Check stderr for logs.
 
 ## Query privacy
 

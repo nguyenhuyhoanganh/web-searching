@@ -1,34 +1,34 @@
-# web-research — web search & read Agent Skill (no MCP)
+# web-research — web search & read skill for Cline (no MCP)
 
-A skill that lets Claude/Cline **search the web** and **read web pages** without MCP — useful when a
+A skill that lets Cline **search the web** and **read web pages** without MCP — useful when a
 forked Cline build blocks MCP and ships no web tools. The agent calls two Python scripts through the
 terminal (`execute_command`), and `SKILL.md` teaches the agent to **search precisely, not blindly**.
 
-This skill follows Anthropic's **Agent Skills** standard (a directory with `SKILL.md` + frontmatter +
-progressive disclosure). Can you use MCP? See branch `claude/cline-search-web-skills-yc36cf` (the MCP server).
+Can you use MCP? See branch `claude/cline-search-web-skills-yc36cf` (the MCP server variant).
 
-## Structure (Agent Skill standard)
+## Structure
 
 ```
-web-research/                 # the shareable unit — copy this whole folder to use it
-├── SKILL.md                  # frontmatter (name, description) + concise main instructions
+.cline/skills/web-research/         # Cline auto-discovers skills in .cline/skills/
+├── SKILL.md                        # frontmatter (name, description) + main instructions
 ├── reference/
-│   └── search-strategy.md    # detail: query design, good/bad examples, verification, privacy
+│   └── search-strategy.md          # detail: query design, good/bad examples, verification, privacy
 ├── scripts/
-│   ├── web_search.py         # search (DuckDuckGo, Google fallback) — no API key
-│   └── web_read.py           # extract main content (trafilatura + BeautifulSoup)
+│   ├── web_search.py               # search (DuckDuckGo, Google fallback) — no API key
+│   └── web_read.py                 # extract main content (trafilatura + BeautifulSoup)
 ├── requirements.txt
 └── setup.sh
-.clinerules                   # pointer so Cline reads SKILL.md when needed
+.clinerules                         # pointer so Cline reads SKILL.md when needed
 ```
 
-Progressive disclosure: only `name` + `description` are preloaded; `SKILL.md` is read when the skill
-activates; `reference/search-strategy.md` is read only when needed — keeping context lean.
+Cline loads skills from `.cline/skills/` automatically — the skill name and description are
+preloaded at startup; the full `SKILL.md` is read only when the skill activates; and
+`reference/search-strategy.md` is read only when needed — keeping context lean.
 
 ## Install
 
 ```bash
-cd web-research
+cd .cline/skills/web-research
 bash setup.sh        # create .venv and install deps (run once)
 
 # Test
@@ -38,17 +38,21 @@ bash setup.sh        # create .venv and install deps (run once)
 
 Requires Python 3.10+, internet access, **no API key**.
 
-## Using it per environment
+## Sharing with your team
 
-**Cline:** copy the `web-research/` folder and the `.clinerules` file into your workspace root, then
-run `bash web-research/setup.sh`. Cline reads `.clinerules` → opens `SKILL.md` when it needs to
-search/read/verify. Or paste `.clinerules` into **Global Rules** (Cline → Settings → Rules) to apply
-it across all projects.
+Copy the `.cline/skills/web-research/` directory and the `.clinerules` file into any workspace.
+Run `bash .cline/skills/web-research/setup.sh` and Cline will auto-detect the skill.
 
-**Claude Code:** copy the `web-research/` folder into `.claude/skills/` (project) or
-`~/.claude/skills/` (personal). Claude Code discovers the skill via its frontmatter.
+Alternatively, copy `web-research/` to `~/.cline/skills/` (global) so it applies to all projects.
 
-**Claude API / claude.ai:** upload the skill per Anthropic's Agent Skills guide.
+## Robustness
+
+- **Dependency checking**: scripts detect missing packages on startup and print install instructions
+- **Retry logic**: `web_read` retries connection errors up to 3 times with exponential backoff (2s, 4s)
+- **Logging**: all scripts log to stderr with timestamps for debugging
+- **Search fallback chain**: DDGS API → DuckDuckGo HTML scrape → Google HTML scrape
+- **Python alias detection**: SKILL.md guides Cline to detect `python3` / `python` / `py` automatically
+- **Dynamic path resolution**: SKILL.md teaches Cline to find scripts relative to the skill directory
 
 ## How it behaves (after install)
 
@@ -61,13 +65,13 @@ No manual calls needed — chat normally and the agent uses it per `SKILL.md`:
 ## Running the scripts directly (reference)
 
 ```bash
-cd web-research
-python3 scripts/web_search.py "<query>" -n 5
-python3 scripts/web_search.py "<query>" --news            # news
-python3 scripts/web_search.py "<query>" --region vn-vi    # Vietnam region
-python3 scripts/web_read.py "<url>"
-python3 scripts/web_read.py "<url>" --selector "article"  # specific part via CSS
-python3 scripts/web_read.py "<url>" --links               # list links
+SKILL_DIR=".cline/skills/web-research"
+python3 "$SKILL_DIR/scripts/web_search.py" "<query>" -n 5
+python3 "$SKILL_DIR/scripts/web_search.py" "<query>" --news            # news
+python3 "$SKILL_DIR/scripts/web_search.py" "<query>" --region vn-vi    # Vietnam region
+python3 "$SKILL_DIR/scripts/web_read.py" "<url>"
+python3 "$SKILL_DIR/scripts/web_read.py" "<url>" --selector "article"  # specific part via CSS
+python3 "$SKILL_DIR/scripts/web_read.py" "<url>" --links               # list links
 ```
 
 ## The "don't search blindly" mechanism
@@ -78,4 +82,9 @@ not the snippet → cross-check 2+ sources when it matters → conclude with the
 **TRUE/FALSE/OUTDATED** verdict. Details + good/bad examples + query-privacy notes: `reference/search-strategy.md`.
 
 ## Dependencies
-`ddgs`, `requests`, `beautifulsoup4`, `trafilatura`, `lxml`. No `mcp` needed.
+
+- `requests` — HTTP client (required)
+- `beautifulsoup4` — HTML parsing (required)
+- `ddgs` — DuckDuckGo search (optional — falls back to HTML scraping)
+- `trafilatura` — smart content extraction (optional — falls back to BeautifulSoup)
+- `lxml` — fast HTML parser for trafilatura

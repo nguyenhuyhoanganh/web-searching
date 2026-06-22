@@ -17,18 +17,35 @@ Examples:
 
 import argparse
 import json
+import logging
 import re
 import sys
+import time
 from urllib.parse import urljoin
 
-import requests
-from bs4 import BeautifulSoup
+try:
+    import requests
+    from bs4 import BeautifulSoup
+except ImportError as e:
+    _pkg = {"bs4": "beautifulsoup4"}.get(e.name, e.name)
+    print(f"ERROR: Missing required package '{_pkg}'.", file=sys.stderr)
+    print("Install dependencies first:", file=sys.stderr)
+    print("  pip install requests beautifulsoup4", file=sys.stderr)
+    print("Or run the setup script:  bash setup.sh", file=sys.stderr)
+    sys.exit(1)
 
 try:
     import trafilatura
     HAS_TRAFILATURA = True
 except ImportError:
     HAS_TRAFILATURA = False
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    stream=sys.stderr,
+)
+logger = logging.getLogger("web_read")
 
 DEFAULT_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
@@ -37,13 +54,31 @@ DEFAULT_HEADERS = {
 }
 
 MAX_CONTENT_LENGTH = 50_000
+FETCH_RETRIES = 3
 
 
-def fetch_page(url: str, timeout: int = 30) -> str:
-    response = requests.get(url, headers=DEFAULT_HEADERS, timeout=timeout, allow_redirects=True)
-    response.raise_for_status()
-    response.encoding = response.apparent_encoding or "utf-8"
-    return response.text
+def fetch_page(url: str, timeout: int = 30, retries: int = FETCH_RETRIES) -> str:
+    last_error = None
+    for attempt in range(1, retries + 1):
+        try:
+            logger.debug("Fetching %s (attempt %d/%d)", url, attempt, retries)
+            response = requests.get(url, headers=DEFAULT_HEADERS, timeout=timeout, allow_redirects=True)
+            response.raise_for_status()
+            response.encoding = response.apparent_encoding or "utf-8"
+            logger.info("Successfully fetched %s (%d chars)", url, len(response.text))
+            return response.text
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+            last_error = e
+            if attempt < retries:
+                wait = attempt * 2
+                logger.warning("Attempt %d/%d failed for %s: %s. Retrying in %ds...", attempt, retries, url, e, wait)
+                time.sleep(wait)
+            else:
+                logger.error("All %d attempts failed for %s: %s", retries, url, e)
+        except requests.exceptions.HTTPError as e:
+            logger.error("HTTP error for %s: %s", url, e)
+            raise
+    raise last_error
 
 
 def extract_with_trafilatura(html: str, url: str) -> dict | None:
