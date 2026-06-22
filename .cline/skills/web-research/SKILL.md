@@ -15,39 +15,34 @@ cannot state "exactly what am I trying to find," do not search.
 
 **You MUST run these checks the first time you use the skill in a session.** Do not skip this.
 
-### Step 1: Detect the Python command
+### Step 1: Find which Python command works on this machine
+
+Different machines use `python3`, `python`, or `py`. Run this to find which one exists:
 
 ```bash
 python3 --version 2>/dev/null || python --version 2>/dev/null || py --version 2>/dev/null
 ```
 
-Use the first command that succeeds and has version >= 3.10. Store it — e.g. `PYTHON_CMD=python3`.
+Remember which command printed a version >= 3.10. Use that exact command for all steps below.
+For example, if `python3` printed `Python 3.12.0`, use `python3` everywhere below.
 
-### Step 2: Locate the skill directory
+### Step 2: Check dependencies — install if missing
 
-```bash
-SKILL_DIR="$(git rev-parse --show-toplevel)/.cline/skills/web-research"
-```
-
-If `git` is unavailable: `find . -path "*/.cline/skills/web-research/scripts/web_search.py" -print -quit 2>/dev/null`
-
-### Step 3: Check dependencies — install if missing
-
-Run this **one command** to check all required + recommended packages at once:
+Replace `python3` below with whichever command worked in step 1:
 
 ```bash
-$PYTHON_CMD -c "import requests; from bs4 import BeautifulSoup; from ddgs import DDGS; import trafilatura; print('ALL OK')"
+python3 -c "import requests; from bs4 import BeautifulSoup; from ddgs import DDGS; import trafilatura; print('ALL OK')"
 ```
 
-**If it prints `ALL OK`** → skip to "Running the scripts" below.
+**If it prints `ALL OK`** → everything is installed, go to "Running the scripts".
 
-**If it fails** → install everything in one go:
+**If it fails** (e.g. `ModuleNotFoundError`) → install all packages:
 
 ```bash
-$PYTHON_CMD -m pip install requests beautifulsoup4 ddgs trafilatura lxml
+python3 -m pip install requests beautifulsoup4 ddgs trafilatura lxml
 ```
 
-Then re-run the check command above to confirm.
+Then re-run the check command to confirm it prints `ALL OK`.
 
 > **Do not skip installation.** `ddgs` provides the primary search engine; `trafilatura` provides
 > accurate content extraction. Without them the scripts fall back to less reliable methods and will
@@ -79,20 +74,21 @@ workflow, and query-privacy guidance).
 
 ## Running the scripts
 
-Use the detected Python command and resolved script directory from the setup section above.
+The scripts are at the paths below (relative to the workspace root). Replace `python3` with
+whichever Python command worked in step 1.
 
 ```bash
 # Search
-$PYTHON_CMD "$SKILL_DIR/scripts/web_search.py" "Spring Boot latest version Java 21 support" -n 5
-$PYTHON_CMD "$SKILL_DIR/scripts/web_search.py" "<query>" --news          # news
-$PYTHON_CMD "$SKILL_DIR/scripts/web_search.py" "<query>" --region vn-vi  # Vietnam content
-$PYTHON_CMD "$SKILL_DIR/scripts/web_search.py" "<query>" --json          # JSON for parsing
+python3 .cline/skills/web-research/scripts/web_search.py "Spring Boot latest version Java 21" -n 5
+python3 .cline/skills/web-research/scripts/web_search.py "<query>" --news          # news
+python3 .cline/skills/web-research/scripts/web_search.py "<query>" --region vn-vi  # Vietnam
+python3 .cline/skills/web-research/scripts/web_search.py "<query>" --json          # JSON output
 
 # Read a page
-$PYTHON_CMD "$SKILL_DIR/scripts/web_read.py" "https://..."               # extract main content
-$PYTHON_CMD "$SKILL_DIR/scripts/web_read.py" "<url>" --selector "article" # CSS selector
-$PYTHON_CMD "$SKILL_DIR/scripts/web_read.py" "<url>" --max-length 5000
-$PYTHON_CMD "$SKILL_DIR/scripts/web_read.py" "<url>" --links             # list links
+python3 .cline/skills/web-research/scripts/web_read.py "https://..."               # main content
+python3 .cline/skills/web-research/scripts/web_read.py "<url>" --selector "article" # CSS selector
+python3 .cline/skills/web-research/scripts/web_read.py "<url>" --max-length 5000
+python3 .cline/skills/web-research/scripts/web_read.py "<url>" --links             # list links
 ```
 
 `web_search`: `-n/--max-results` (default 5), `-r/--region`, `--news`, `--answers`, `--json`.
