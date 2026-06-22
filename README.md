@@ -115,7 +115,7 @@ Khi dùng qua MCP server, Cline có thể gọi trực tiếp:
 | Parameter | Type | Default | Mô tả |
 |-----------|------|---------|--------|
 | `url` | string | (required) | URL trang web |
-| `max_length` | int | 50000 | Độ dài nội dung tối đa |
+| `max_length` | int | 25000 | Độ dài nội dung tối đa (cũng là trần cứng) |
 | `selector` | string | null | CSS selector |
 | `extract_links` | bool | false | Chỉ lấy links |
 
@@ -125,7 +125,7 @@ Khi dùng qua MCP server, Cline có thể gọi trực tiếp:
 |-----------|------|---------|--------|
 | `query` | string | (required) | Từ khóa tìm kiếm |
 | `max_results` | int | 3 | Số trang đọc (max 5) |
-| `max_content_length` | int | 10000 | Độ dài mỗi trang |
+| `max_content_length` | int | 8000 | Độ dài mỗi trang |
 | `region` | string | "wt-wt" | Vùng tìm kiếm |
 
 ## Cách hoạt động với Cline
