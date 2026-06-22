@@ -1,71 +1,103 @@
-# Web Search & Web Read Skills
+# SKILL: Web Search & Web Read (MCP server "web-skills")
 
-Bạn có quyền truy cập các web skills sau thông qua MCP tools hoặc CLI commands.
+Bạn (Cline) có 3 MCP tool từ server `web-skills`:
+- `web_search(query, max_results, region, search_type)` — tìm kiếm web/news/answers.
+- `web_read(url, max_length, selector, extract_links)` — đọc & trích nội dung chính của 1 URL.
+- `search_and_read(query, max_results, max_content_length, region)` — tìm + tự đọc top kết quả.
 
-## Khi nào sử dụng Web Skills
+Mục tiêu của skill: khi cần thông tin ngoài kiến thức/đã cũ/cần kiểm chứng, bạn **tự suy ra truy
+vấn đúng**, tìm, đọc nguồn thật, đối chiếu, rồi trả lời kèm trích dẫn. **Tuyệt đối không search bừa.**
 
-### Tự động sử dụng `web_search` khi:
-- User cung cấp thông tin cần verify (kiểm chứng tính chính xác)
-- User hỏi về phiên bản mới nhất của library/framework/tool
-- User hỏi về best practices, conventions mà bạn không chắc chắn
-- User cung cấp thông tin mà bạn cần kiểm tra xem có cập nhật không
-- Cần tìm documentation, API reference, hoặc hướng dẫn
-- Cần tìm solution cho error message hoặc bug cụ thể
-- User nhắc đến công nghệ/tool mà bạn chưa biết hoặc không chắc chắn
+---
 
-### Tự động sử dụng `web_read` khi:
-- User cung cấp URL và muốn bạn đọc nội dung
-- Sau khi `web_search` trả về kết quả, cần đọc chi tiết một trang cụ thể
-- Cần đọc documentation từ một URL cụ thể
-- Cần verify nội dung từ một nguồn cụ thể
+## 1. KHI NÀO search — KHI NÀO KHÔNG
 
-### Sử dụng `search_and_read` khi:
-- Cần nghiên cứu sâu một chủ đề (tìm + đọc luôn)
-- Cần so sánh thông tin từ nhiều nguồn
-- User yêu cầu verify thông tin và cần bằng chứng chi tiết
+### Phải search khi:
+- Thông tin thay đổi theo thời gian: phiên bản mới nhất, release date, giá, tin tức, "hiện tại".
+- Sự kiện / con số / API / cú pháp cụ thể mà bạn **không chắc chắn 100%**.
+- User dán nội dung và (ngầm hoặc rõ) muốn **kiểm chứng** tính đúng/sai.
+- User đưa URL và muốn bạn đọc/nắm nội dung.
+- Lỗi/bug cụ thể, thông báo lỗi nguyên văn cần tìm cách xử lý.
+- Công nghệ/thư viện/thuật ngữ bạn chưa từng biết hoặc nhớ mơ hồ.
 
-## Cách sử dụng (MCP Tools)
+### KHÔNG search (trả lời thẳng) khi:
+- Kiến thức ổn định, phổ thông mà bạn chắc chắn (cú pháp cơ bản, khái niệm chung).
+- Câu trả lời đã nằm trong **codebase / file / ngữ cảnh** hiện có → đọc file thay vì search.
+- Yêu cầu thuần suy luận/tính toán, không phụ thuộc dữ kiện ngoài.
 
-Nếu MCP server `web-skills` đã được cấu hình, sử dụng trực tiếp qua MCP tools:
-- `web_search(query, max_results, region, search_type)`
-- `web_read(url, max_length, selector, extract_links)`
-- `search_and_read(query, max_results, max_content_length, region)`
+> Nguyên tắc vàng: **mỗi lần search phải có một câu hỏi cụ thể cần trả lời.** Nếu bạn không nói
+> được "mình đang đi tìm chính xác điều gì", thì đừng search.
 
-## Cách sử dụng (CLI Fallback)
+---
 
-Nếu MCP không khả dụng, sử dụng qua terminal commands:
+## 2. QUY TRÌNH BẮT BUỘC (theo đúng thứ tự)
 
-```bash
-# Activate virtual environment trước
-source /path/to/web-searching/.venv/bin/activate
+1. **Bóc tách request.** Liệt kê: các *mệnh đề cần kiểm chứng* (claims), *thực thể* (tên
+   lib/sản phẩm/người), *phiên bản*, *mốc thời gian*, *ràng buộc* (ngôn ngữ, OS, framework).
+2. **Quyết định có cần search không** (theo mục 1). Không cần → trả lời luôn.
+3. **Thiết kế truy vấn** cho từng điều cần biết (xem mục 4). Một truy vấn = một mục tiêu.
+4. **Gọi `web_search`**, đọc danh sách kết quả: ưu tiên nguồn chính thống, để ý *ngày* và *domain*.
+5. **`web_read` nguồn đáng tin nhất** để xác nhận. **Không kết luận chỉ dựa trên snippet.**
+   (Cần nghiên cứu nhanh nhiều nguồn → dùng `search_and_read`.)
+6. **Đối chiếu ≥ 2 nguồn** nếu thông tin quan trọng hoặc các nguồn mâu thuẫn.
+7. **Tinh chỉnh & lặp** nếu kết quả kém: đổi từ khóa, thêm/bớt qualifier, đổi nguồn (tối đa ~3 vòng).
+8. **Kết luận + trích dẫn.** Mỗi khẳng định quan trọng kèm URL. Nêu rõ phán quyết:
+   **ĐÚNG / SAI / CẦN CẬP NHẬT / KHÔNG ĐỦ BẰNG CHỨNG**.
 
-# Tìm kiếm web
-python /path/to/web-searching/skills/web_search.py "search query"
-python /path/to/web-searching/skills/web_search.py "query" --max-results 10
-python /path/to/web-searching/skills/web_search.py "query" --news
-python /path/to/web-searching/skills/web_search.py "query" --region vn-vi
+---
 
-# Đọc trang web
-python /path/to/web-searching/skills/web_read.py "https://example.com"
-python /path/to/web-searching/skills/web_read.py "https://example.com" --max-length 5000
-python /path/to/web-searching/skills/web_read.py "https://example.com" --selector "article"
-python /path/to/web-searching/skills/web_read.py "https://example.com" --links
-```
+## 3. ƯU TIÊN NGUỒN
+1. Tài liệu/website chính thức (docs, trang chủ dự án, release notes, RFC, spec).
+2. Repo GitHub gốc (README, CHANGELOG, issues, releases).
+3. Nguồn uy tín (MDN, Stack Overflow upvote cao, blog của chính tác giả/tổ chức).
+4. Còn lại: tham khảo, cần đối chiếu thêm.
 
-## Chiến lược tìm kiếm thông minh
+Cảnh giác nội dung SEO rác, bài AI-generated, tài liệu cũ. Luôn nhìn **ngày xuất bản**.
 
-Khi user cung cấp thông tin, tự suy ra query tìm kiếm phù hợp:
+---
 
-1. **Verify thông tin kỹ thuật**: Tìm kiếm "[technology] [version] [feature] official documentation"
-2. **Tìm lỗi/bug**: Tìm kiếm "[error message exact]" hoặc "[technology] [error keyword] solution"
-3. **Best practices**: Tìm kiếm "[technology] best practices [year]" hoặc "[technology] recommended approach [topic]"
-4. **So sánh**: Tìm kiếm "[tech A] vs [tech B] [context]"
-5. **Tin tức/updates**: Sử dụng search_type="news" hoặc --news flag
+## 4. THIẾT KẾ TRUY VẤN — search THÔNG MINH
 
-## Quy tắc quan trọng
+- **Bóc từ khóa cốt lõi**, bỏ từ thừa ("làm thế nào", "cho tôi", "bạn nghĩ").
+- **Trích thực thể + phiên bản chính xác**: `<tên> <phiên bản> <thuật ngữ official>`.
+- **Chủ đề kỹ thuật → dùng tiếng Anh** (tài liệu gốc hầu hết tiếng Anh).
+- **Thêm qualifier theo ý định**: `latest`, `2026`, `release notes`, `changelog`,
+  `documentation`, `vs`, `deprecated`, `migration guide`.
+- **Toán tử tìm kiếm** (truyền nguyên văn trong `query`):
+  - `"cụm chính xác"` — giữ nguyên cụm/tên/thông báo lỗi.
+  - `site:domain` — giới hạn nguồn, vd `site:docs.python.org`, `site:github.com`.
+  - Thông báo lỗi để **nguyên văn trong ngoặc kép**, bỏ phần biến động (đường dẫn, số dòng).
+- **Một truy vấn một ý.** Cần nhiều thứ → nhiều lần gọi `web_search` riêng.
+- Chọn `search_type`: `"news"` cho tin tức, `"answers"` cho dữ kiện nhanh, mặc định `"web"`.
+- Chọn `region`: `"vn-vi"` cho nội dung Việt Nam, `"us-en"`/`"wt-wt"` cho quốc tế.
 
-- Luôn nêu rõ nguồn (URL) khi trích dẫn thông tin từ web
-- Nếu kết quả tìm kiếm mâu thuẫn nhau, đọc thêm chi tiết từ nhiều nguồn
-- Ưu tiên nguồn chính thức (official docs, GitHub repo, blog chính thức)
-- Khi verify thông tin của user, nói rõ kết quả verify (đúng/sai/cần cập nhật)
-- Không bịa thông tin - nếu không tìm thấy, nói rõ là không tìm thấy
+### Ví dụ TỐT vs TỆ
+
+| Request của user | ❌ Query tệ | ✅ Query tốt |
+|---|---|---|
+| "Spring Boot mới nhất hỗ trợ Java 21 chưa?" | `spring boot java` | `web_search("Spring Boot latest version Java 21 support site:spring.io")` → `web_read` trang release notes |
+| Lỗi `NoClassDefFoundError: javax/xml/bind/JAXBException` trên Java 11 | `java jaxb error` | `web_search('"NoClassDefFoundError" "javax/xml/bind/JAXBException" Java 11 fix')` |
+| "React 19 bỏ forwardRef đúng không?" | `react forwardRef` | `web_search("React 19 forwardRef deprecated site:react.dev")` → `web_read` blog/docs → ĐÚNG/SAI |
+| "Thư viện X bản nào ổn định nhất?" | `X library` | `web_search("<X> latest stable release site:github.com")` → `web_read` trang Releases |
+| "So sánh Postgres vs MySQL cho phân tích" | `postgres mysql` | `search_and_read("PostgreSQL vs MySQL OLAP analytical workload comparison")` → đối chiếu |
+
+---
+
+## 5. KHI USER DÁN NỘI DUNG ĐỂ "VERIFY"
+
+1. **Tách thành từng tuyên bố factual** (mỗi câu khẳng định một dữ kiện riêng).
+2. Với mỗi tuyên bố → 1 lần `web_search` riêng → `web_read` nguồn gốc.
+3. Gắn nhãn từng tuyên bố: **ĐÚNG / SAI / CẦN CẬP NHẬT / KHÔNG ĐỦ BẰNG CHỨNG** + URL nguồn.
+4. Nếu SAI → nêu thông tin đúng kèm nguồn. Nếu nguồn mâu thuẫn → trình bày cả hai phía.
+5. **Không bịa.** Không tìm được thì nói rõ "không tìm thấy bằng chứng", đừng đoán.
+
+---
+
+## 6. QUY TẮC TRÌNH BÀY KẾT QUẢ
+- Luôn **trích nguồn (URL)** cho mỗi dữ kiện lấy từ web.
+- Nói rõ **mức độ chắc chắn** và **ngày** của thông tin khi nó nhạy cảm về thời gian.
+- Ngắn gọn, đi thẳng kết luận trước, chi tiết/nguồn sau.
+- Nếu đã search mà không đủ bằng chứng → nói thẳng, đề xuất truy vấn/nguồn tiếp theo.
+
+> Lưu ý: nếu MCP server `web-skills` không khả dụng, có thể chạy script tương đương qua terminal:
+> `python skills/web_search.py "<query>"` và `python skills/web_read.py "<url>"`.
