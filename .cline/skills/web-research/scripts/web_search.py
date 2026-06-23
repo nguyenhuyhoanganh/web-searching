@@ -1,265 +1,153 @@
 #!/usr/bin/env python3
-"""
-Web Search skill script.
-Searches the web via DuckDuckGo (no API key). Falls back to DuckDuckGo HTML
-and Google HTML scraping when the DuckDuckGo API is rate-limited.
-
-Usage:
-    python web_search.py "query" [--max-results N] [--region vn-vi]
-    python web_search.py "query" --news
-    python web_search.py "query" --answers
+"""Search the web (DDGS API, with DuckDuckGo/Google HTML fallback). Optionally fetch full content.
 
 Examples:
-    python web_search.py "Python asyncio tutorial"
-    python web_search.py "latest Spring Boot release" --max-results 10
-    python web_search.py "Vietnam tech news" --news --region vn-vi
+    python web_search.py "Spring Boot latest version Java 21" -n 5
+    python web_search.py "<query>" --news --region vn-vi
+    python web_search.py "<query>" --fetch --fetch-count 3
 """
-
 import argparse
 import json
 import logging
+import os
 import sys
 import textwrap
 from urllib.parse import quote_plus
 
-try:
-    import requests
-    from bs4 import BeautifulSoup
-except ImportError as e:
-    _pkg = {"bs4": "beautifulsoup4"}.get(e.name, e.name)
-    print(f"ERROR: Missing required package '{_pkg}'.", file=sys.stderr)
-    print("Install dependencies first:", file=sys.stderr)
-    print("  pip install requests beautifulsoup4", file=sys.stderr)
-    print("Or run the setup script:  bash setup.sh", file=sys.stderr)
-    sys.exit(1)
+SKILL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if SKILL_DIR not in sys.path:
+    sys.path.insert(0, SKILL_DIR)
+
+from bs4 import BeautifulSoup  # noqa: E402
+
+from lib import engines, extract, http  # noqa: E402
+
+logging.basicConfig(level=logging.INFO,
+                    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s", stream=sys.stderr)
+logger = logging.getLogger("web-research.search")
 
 try:
     from ddgs import DDGS
     HAS_DDGS = True
 except ImportError:
     HAS_DDGS = False
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    stream=sys.stderr,
-)
-logger = logging.getLogger("web_search")
-
-if not HAS_DDGS:
-    logger.warning(
-        "Package 'ddgs' is not installed — DuckDuckGo API search is disabled. "
-        "Falling back to HTML scraping (less reliable). "
-        "Install it:  pip install ddgs"
-    )
-
-DEFAULT_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    "Accept-Language": "en-US,en;q=0.9",
-}
-
-# SSL verification — disabled automatically on first SSLError (common in corporate proxies).
-_verify_ssl = True
+    logger.warning("Package 'ddgs' not installed — using HTML scraping fallback. Install: pip install ddgs")
 
 
-def _get(url: str, timeout: int = 15) -> requests.Response:
-    """HTTP GET with automatic SSL fallback."""
-    global _verify_ssl
-    try:
-        resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=timeout, verify=_verify_ssl)
-        resp.raise_for_status()
-        return resp
-    except requests.exceptions.SSLError:
-        if _verify_ssl:
-            logger.warning("SSL verification failed. Retrying without SSL verification...")
-            _verify_ssl = False
-            resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=timeout, verify=False)
-            resp.raise_for_status()
-            return resp
-        raise
+def _ddgs_text(query, max_results, region):
+    with DDGS() as ddgs:
+        rows = list(ddgs.text(query, region=region, max_results=max_results))
+    return [{"title": r.get("title", ""), "url": r.get("href", ""), "snippet": r.get("body", "")}
+            for r in rows]
 
 
-def _search_ddgs(query: str, max_results: int, region: str) -> list[dict]:
-    with DDGS(verify=_verify_ssl) as ddgs:
-        results = list(ddgs.text(query, region=region, max_results=max_results))
-    return [
-        {"title": r.get("title", ""), "url": r.get("href", ""), "snippet": r.get("body", "")}
-        for r in results
-    ]
+def _ddgs_news(query, max_results, region):
+    with DDGS() as ddgs:
+        rows = list(ddgs.news(query, region=region, max_results=max_results))
+    return [{"title": r.get("title", ""), "url": r.get("url", ""), "snippet": r.get("body", ""),
+             "date": r.get("date", ""), "source": r.get("source", "")} for r in rows]
 
 
-def _search_ddgs_news(query: str, max_results: int, region: str) -> list[dict]:
-    with DDGS(verify=_verify_ssl) as ddgs:
-        results = list(ddgs.news(query, region=region, max_results=max_results))
-    return [
-        {
-            "title": r.get("title", ""),
-            "url": r.get("url", ""),
-            "snippet": r.get("body", ""),
-            "date": r.get("date", ""),
-            "source": r.get("source", ""),
-        }
-        for r in results
-    ]
-
-
-def _search_ddgs_answers(query: str) -> list[dict]:
-    with DDGS(verify=_verify_ssl) as ddgs:
-        results = list(ddgs.answers(query))
-    return [
-        {"text": r.get("text", ""), "url": r.get("url", ""), "source": r.get("source", "")}
-        for r in results
-    ]
-
-
-def _search_google_fallback(query: str, max_results: int) -> list[dict]:
-    url = f"https://www.google.com/search?q={quote_plus(query)}&num={max_results}"
-    resp = _get(url)
+def _duckduckgo_html(query, max_results):
+    resp = http.get(f"https://html.duckduckgo.com/html/?q={quote_plus(query)}")
     soup = BeautifulSoup(resp.text, "html.parser")
+    out = []
+    for div in soup.select("div.result"):
+        a = div.find("a", class_="result__a")
+        if not a:
+            continue
+        snip = div.find("a", class_="result__snippet")
+        if a.get_text(strip=True) and a.get("href"):
+            out.append({"title": a.get_text(strip=True), "url": a["href"],
+                        "snippet": snip.get_text(strip=True) if snip else ""})
+        if len(out) >= max_results:
+            break
+    return out
 
-    results = []
+
+def _google_html(query, max_results):
+    resp = http.get(f"https://www.google.com/search?q={quote_plus(query)}&num={max_results}")
+    soup = BeautifulSoup(resp.text, "html.parser")
+    out = []
     for g in soup.select("div.g, div[data-sokoban-container]"):
-        link = g.find("a", href=True)
-        if not link:
+        a = g.find("a", href=True)
+        h3 = g.find("h3")
+        if not a or not a["href"].startswith("http") or not h3:
             continue
-        href = link["href"]
-        if not href.startswith("http"):
-            continue
-        title_el = g.find("h3")
-        title = title_el.get_text(strip=True) if title_el else ""
-        snippet_el = g.find("div", class_="VwiC3b") or g.find("span", class_="aCOpRe")
-        snippet = snippet_el.get_text(strip=True) if snippet_el else ""
-        if title:
-            results.append({"title": title, "url": href, "snippet": snippet})
-        if len(results) >= max_results:
+        snip = g.find("div", class_="VwiC3b") or g.find("span", class_="aCOpRe")
+        out.append({"title": h3.get_text(strip=True), "url": a["href"],
+                    "snippet": snip.get_text(strip=True) if snip else ""})
+        if len(out) >= max_results:
             break
-
-    return results
-
-
-def _search_duckduckgo_html_fallback(query: str, max_results: int) -> list[dict]:
-    url = f"https://html.duckduckgo.com/html/?q={quote_plus(query)}"
-    resp = _get(url)
-    soup = BeautifulSoup(resp.text, "html.parser")
-
-    results = []
-    for result_div in soup.select("div.result"):
-        link = result_div.find("a", class_="result__a")
-        if not link:
-            continue
-        title = link.get_text(strip=True)
-        href = link.get("href", "")
-        snippet_el = result_div.find("a", class_="result__snippet")
-        snippet = snippet_el.get_text(strip=True) if snippet_el else ""
-        if title and href:
-            results.append({"title": title, "url": href, "snippet": snippet})
-        if len(results) >= max_results:
-            break
-
-    return results
+    return out
 
 
-def search_web(query: str, max_results: int = 5, region: str = "wt-wt") -> list[dict]:
+def search_web(query, max_results=5, region="wt-wt", news=False):
     errors = []
-
     if HAS_DDGS:
         try:
-            logger.info("Searching via DDGS API: %r", query)
-            results = _search_ddgs(query, max_results, region)
-            logger.info("DDGS returned %d results", len(results))
-            return results
+            return _ddgs_news(query, max_results, region) if news else _ddgs_text(query, max_results, region)
         except Exception as e:
-            logger.warning("DDGS API failed: %s", e)
             errors.append(f"DDGS: {e}")
-    else:
-        logger.info("ddgs package not installed, skipping DDGS API")
-
-    try:
-        logger.info("Trying DuckDuckGo HTML fallback")
-        results = _search_duckduckgo_html_fallback(query, max_results)
-        logger.info("DDG HTML returned %d results", len(results))
-        return results
-    except Exception as e:
-        logger.warning("DDG HTML fallback failed: %s", e)
-        errors.append(f"DDG HTML: {e}")
-
-    try:
-        logger.info("Trying Google HTML fallback")
-        results = _search_google_fallback(query, max_results)
-        logger.info("Google HTML returned %d results", len(results))
-        return results
-    except Exception as e:
-        logger.warning("Google HTML fallback failed: %s", e)
-        errors.append(f"Google: {e}")
-
-    raise RuntimeError(f"All search backends failed: {'; '.join(errors)}")
-
-
-def search_news(query: str, max_results: int = 5, region: str = "wt-wt") -> list[dict]:
-    if HAS_DDGS:
+            logger.warning("DDGS failed: %s", e)
+    for name, fn in (("DDG-HTML", _duckduckgo_html), ("Google-HTML", _google_html)):
         try:
-            return _search_ddgs_news(query, max_results, region)
-        except Exception:
-            pass
-    return search_web(f"{query} news", max_results, region)
+            return fn(query, max_results)
+        except Exception as e:
+            errors.append(f"{name}: {e}")
+            logger.warning("%s failed: %s", name, e)
+    raise RuntimeError("All search backends failed: " + "; ".join(errors))
 
 
-def search_answers(query: str) -> list[dict]:
-    if HAS_DDGS:
+def _attach_content(results, count):
+    for r in results[:count]:
         try:
-            return _search_ddgs_answers(query)
-        except Exception:
-            pass
-    return search_web(query, 3)
+            page = engines.get_html(r["url"], render="auto")
+            doc = extract.to_document(page["html"], r["url"], fmt="markdown")
+            content, _ = extract.truncate(doc["content"], 5000)
+            r["content"] = content
+        except Exception as e:
+            r["content"] = f"[could not fetch: {e}]"
+    return results
 
 
-def format_results(results: list[dict], mode: str = "text") -> str:
-    if mode == "json":
+def format_results(results, as_json):
+    if as_json:
         return json.dumps(results, ensure_ascii=False, indent=2)
-
     if not results:
         return "No results found."
-
-    output = []
+    out = []
     for i, r in enumerate(results, 1):
-        output.append(f"[{i}] {r.get('title', r.get('text', 'N/A'))}")
-        url = r.get("url", "")
-        if url:
-            output.append(f"    URL: {url}")
-        snippet = r.get("snippet", r.get("text", ""))
-        if snippet:
-            wrapped = textwrap.fill(snippet, width=100, initial_indent="    ", subsequent_indent="    ")
-            output.append(wrapped)
+        out.append(f"[{i}] {r.get('title', 'N/A')}")
+        if r.get("url"):
+            out.append(f"    URL: {r['url']}")
+        if r.get("snippet"):
+            out.append(textwrap.fill(r["snippet"], 100, initial_indent="    ", subsequent_indent="    "))
         if r.get("date"):
-            output.append(f"    Date: {r['date']}")
-        if r.get("source"):
-            output.append(f"    Source: {r['source']}")
-        output.append("")
-    return "\n".join(output)
+            out.append(f"    Date: {r['date']}")
+        if r.get("content"):
+            out.append("    --- content ---")
+            out.append(textwrap.indent(r["content"], "    "))
+        out.append("")
+    return "\n".join(out)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Web search skill")
-    parser.add_argument("query", help="Search query")
-    parser.add_argument("--max-results", "-n", type=int, default=5, help="Number of results (default: 5)")
-    parser.add_argument("--region", "-r", default="wt-wt", help="Region code, e.g. vn-vi, us-en (default: wt-wt)")
-    parser.add_argument("--news", action="store_true", help="Search news instead of the web")
-    parser.add_argument("--answers", action="store_true", help="Get instant answers")
-    parser.add_argument("--json", action="store_true", help="Output as JSON")
-
+    parser = argparse.ArgumentParser(description="Web search.")
+    parser.add_argument("query")
+    parser.add_argument("--max-results", "-n", type=int, default=5)
+    parser.add_argument("--region", "-r", default="wt-wt")
+    parser.add_argument("--news", action="store_true")
+    parser.add_argument("--fetch", "--scrape", action="store_true", dest="fetch",
+                        help="Fetch full Markdown content of the top results")
+    parser.add_argument("--fetch-count", type=int, default=3)
+    parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
-    output_mode = "json" if args.json else "text"
-
     try:
-        if args.answers:
-            results = search_answers(args.query)
-        elif args.news:
-            results = search_news(args.query, args.max_results, args.region)
-        else:
-            results = search_web(args.query, args.max_results, args.region)
-
-        print(format_results(results, output_mode))
+        results = search_web(args.query, args.max_results, args.region, args.news)
+        if args.fetch:
+            results = _attach_content(results, args.fetch_count)
+        print(format_results(results, args.json))
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
