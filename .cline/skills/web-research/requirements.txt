@@ -1,5 +1,9 @@
-ddgs>=7.0.0
+# Recommended baseline (core + search + extract). Optional extras installed on demand:
+#   playwright  -> JS rendering / actions   (then: playwright install chromium)
+#   pypdf       -> reading PDFs
 requests>=2.31.0
 beautifulsoup4>=4.12.0
-trafilatura>=2.0.0
 lxml>=5.0.0
+ddgs>=7.0.0
+trafilatura>=2.0.0
+markdownify>=0.13.0
