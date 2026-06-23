@@ -1,0 +1,73 @@
+import importlib.util
+import os
+import sys
+import unittest
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+SKILL_DIR = os.path.dirname(HERE)
+if SKILL_DIR not in sys.path:
+    sys.path.insert(0, SKILL_DIR)
+
+from lib import extract  # noqa: E402
+
+HAS_BS4 = importlib.util.find_spec("bs4") is not None
+HAS_TRAFILATURA = importlib.util.find_spec("trafilatura") is not None
+
+# A document large enough to pass trafilatura's minimum-extraction thresholds.
+ARTICLE = "<html><head><title>My Title</title><meta name='author' content='Jane Doe'></head><body><article><h1>Main Heading</h1>" + "".join(
+    f"<h2>Section {i}</h2><p>Paragraph {i} with enough words and a "
+    f"<a href='https://example.com/s{i}'>link</a> to pass the minimum extraction "
+    f"thresholds in trafilatura nicely today.</p>" for i in range(1, 5)
+) + "</article></body></html>"
+
+SAMPLE = """
+<html><head><title>Hello Title</title></head>
+<body>
+  <nav>menu</nav>
+  <article><h1>Heading</h1><p>First paragraph.</p>
+  <a href="/docs">Docs</a><a href="https://x.test/page">External</a></article>
+  <footer>footer</footer>
+</body></html>
+"""
+
+
+class TestTruncate(unittest.TestCase):
+    def test_truncate_marks_cut(self):
+        out, cut = extract.truncate("abcdef", 3)
+        self.assertTrue(cut)
+        self.assertTrue(out.startswith("abc"))
+
+    def test_truncate_noop_when_short(self):
+        out, cut = extract.truncate("abc", 10)
+        self.assertFalse(cut)
+        self.assertEqual(out, "abc")
+
+
+@unittest.skipUnless(HAS_BS4, "beautifulsoup4 not installed")
+class TestLinksAndText(unittest.TestCase):
+    def test_extract_links_absolutizes(self):
+        links = extract.extract_links(SAMPLE, "https://x.test/")
+        urls = [l["url"] for l in links]
+        self.assertIn("https://x.test/docs", urls)
+        self.assertIn("https://x.test/page", urls)
+
+    def test_to_document_text_drops_nav_footer(self):
+        doc = extract.to_document(SAMPLE, "https://x.test/", fmt="text")
+        self.assertIn("First paragraph", doc["content"])
+        self.assertNotIn("menu", doc["content"])
+        self.assertEqual(doc["title"], "Hello Title")
+
+
+@unittest.skipUnless(HAS_TRAFILATURA, "trafilatura not installed")
+class TestMarkdown(unittest.TestCase):
+    def test_markdown_has_structure_and_metadata(self):
+        doc = extract.to_document(ARTICLE, "https://x.test/post", fmt="markdown")
+        self.assertEqual(doc["method"], "trafilatura")
+        self.assertIn("# Main Heading", doc["content"])
+        self.assertIn("[link](https://example.com/s1)", doc["content"])
+        self.assertEqual(doc["author"], "Jane Doe")
+        self.assertTrue(doc["title"])
+
+
+if __name__ == "__main__":
+    unittest.main()
