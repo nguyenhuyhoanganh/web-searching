@@ -17,7 +17,7 @@ SKILL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if SKILL_DIR not in sys.path:
     sys.path.insert(0, SKILL_DIR)
 
-from lib import engines, env, extract  # noqa: E402
+from lib import engines, env, extract, robots  # noqa: E402
 
 env.force_utf8()
 
@@ -30,13 +30,16 @@ def _same_site(url, host, include_subdomains):
 
 
 def crawl(start_url, max_pages=20, max_depth=2, include_subdomains=False,
-          search=None, render="never", delay_ms=0):
+          search=None, render="never", delay_ms=0, respect_robots=True):
     host = urlparse(start_url).netloc.lower()
+    allowed = robots.fetch_checker(start_url) if respect_robots else (lambda u: True)
     queue = deque([(start_url, 0)])
     seen = {start_url}
     pages = []
     while queue and len(pages) < max_pages:
         url, depth = queue.popleft()
+        if not allowed(url):
+            continue
         try:
             result = engines.get_html(url, render=render)
         except Exception as e:
@@ -65,11 +68,13 @@ def main():
     parser.add_argument("--search", help="Only keep pages whose URL/content contains this substring")
     parser.add_argument("--render", choices=["auto", "never", "always"], default="never")
     parser.add_argument("--delay", type=int, default=0, help="Delay between requests (ms)")
+    parser.add_argument("--ignore-robots", action="store_true",
+                        help="Crawl URLs even if robots.txt disallows them (default: respect robots)")
     parser.add_argument("--format", choices=["markdown", "json"], default="markdown")
     args = parser.parse_args()
     try:
         pages = crawl(args.url, args.max_pages, args.max_depth, args.include_subdomains,
-                      args.search, args.render, args.delay)
+                      args.search, args.render, args.delay, not args.ignore_robots)
         if args.format == "json":
             print(json.dumps(pages, ensure_ascii=False, indent=2))
         else:
