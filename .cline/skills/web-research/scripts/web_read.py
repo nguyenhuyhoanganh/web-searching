@@ -27,7 +27,7 @@ def _format_doc(doc, output_json, suggest_render):
     if output_json:
         return json.dumps(doc, ensure_ascii=False, indent=2)
     out = []
-    for key in ("title", "author", "date", "sitename"):
+    for key in ("title", "author", "date", "sitename", "language", "keywords"):
         if doc.get(key):
             out.append(f"{key.capitalize()}: {doc[key]}")
     out.append(f"URL: {doc.get('url', '')}")

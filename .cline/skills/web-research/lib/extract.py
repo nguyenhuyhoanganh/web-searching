@@ -10,7 +10,8 @@ from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
 
-_EMPTY_DOC = {"title": "", "author": "", "date": "", "sitename": "", "description": "", "content": ""}
+_EMPTY_DOC = {"title": "", "author": "", "date": "", "sitename": "", "description": "",
+              "language": "", "keywords": "", "image": "", "content": ""}
 
 
 def _has(mod):
@@ -129,14 +130,43 @@ def to_document(html, url, fmt="markdown", selector=None):
             doc = _trafilatura_doc(html, url)
             if doc:
                 doc["method"] = "trafilatura"
-                return doc
+                return _merge_metadata(doc, html)
         if _has("markdownify"):
             doc = _markdownify_doc(html, url)
             if doc:
                 doc["method"] = "markdownify"
-                return doc
+                return _merge_metadata(doc, html)
     doc = _bs4_text_doc(html, selector)
     doc["method"] = "bs4-text"
+    return _merge_metadata(doc, html)
+
+
+def extract_metadata(html):
+    """Read metadata from <title>, <html lang>, and <meta> tags (og:, article:, keywords)."""
+    soup = BeautifulSoup(html, "html.parser")
+
+    def meta(attr, value):
+        el = soup.find("meta", attrs={attr: value})
+        return el["content"].strip() if el and el.get("content") else ""
+
+    html_tag = soup.find("html")
+    return {
+        "title": (soup.title.get_text(strip=True) if soup.title else "") or meta("property", "og:title"),
+        "description": meta("name", "description") or meta("property", "og:description"),
+        "sitename": meta("property", "og:site_name"),
+        "image": meta("property", "og:image"),
+        "date": meta("property", "article:published_time"),
+        "keywords": meta("name", "keywords"),
+        "language": (html_tag.get("lang", "").strip() if html_tag else "") or meta("property", "og:locale"),
+    }
+
+
+def _merge_metadata(doc, html):
+    """Fill empty metadata fields on doc from <meta> tags (does not overwrite existing values)."""
+    meta = extract_metadata(html)
+    for key in ("title", "description", "sitename", "date", "language", "keywords", "image"):
+        if not doc.get(key):
+            doc[key] = meta.get(key, "")
     return doc
 
 

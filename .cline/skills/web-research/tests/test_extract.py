@@ -97,5 +97,29 @@ class TestNoiseRemoval(unittest.TestCase):
         self.assertNotIn("Buy now advertisement", doc["content"])
 
 
+@unittest.skipUnless(HAS_BS4, "beautifulsoup4 not installed")
+class TestMetadata(unittest.TestCase):
+    def test_extract_metadata_reads_og_article_keywords_lang(self):
+        html = ("<html lang='en'><head><title>T</title>"
+                "<meta name='description' content='Desc here'>"
+                "<meta property='og:site_name' content='ACME'>"
+                "<meta property='article:published_time' content='2024-01-02'>"
+                "<meta name='keywords' content='a, b, c'></head><body><p>x</p></body></html>")
+        m = extract.extract_metadata(html)
+        self.assertEqual(m["description"], "Desc here")
+        self.assertEqual(m["sitename"], "ACME")
+        self.assertEqual(m["date"], "2024-01-02")
+        self.assertEqual(m["keywords"], "a, b, c")
+        self.assertEqual(m["language"], "en")
+
+    def test_to_document_fills_metadata_in_text_path(self):
+        html = ("<html lang='fr'><head><title>T</title>"
+                "<meta property='og:site_name' content='SiteX'></head>"
+                "<body><p>Some sufficiently long body content here to keep.</p></body></html>")
+        doc = extract.to_document(html, "https://x.test/", fmt="text")
+        self.assertEqual(doc["sitename"], "SiteX")
+        self.assertEqual(doc["language"], "fr")
+
+
 if __name__ == "__main__":
     unittest.main()
