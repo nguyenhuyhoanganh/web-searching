@@ -69,5 +69,33 @@ class TestMarkdown(unittest.TestCase):
         self.assertTrue(doc["title"])
 
 
+class TestStripBase64Images(unittest.TestCase):
+    def test_replaces_base64_image(self):
+        md = "Before ![pic](data:image/png;base64,AAAABBBBCCCCDDDD) after"
+        out = extract.strip_base64_images(md)
+        self.assertNotIn("base64,", out)
+        self.assertIn("<base64-image-removed>", out)
+        self.assertIn("Before", out)
+        self.assertIn("after", out)
+
+    def test_keeps_normal_images(self):
+        md = "![pic](https://x.test/a.png)"
+        self.assertEqual(extract.strip_base64_images(md), md)
+
+
+@unittest.skipUnless(HAS_BS4, "beautifulsoup4 not installed")
+class TestNoiseRemoval(unittest.TestCase):
+    def test_removes_cookie_and_ad_blocks(self):
+        html = ("<html><body>"
+                "<div class='cookie-banner'>Accept all cookies</div>"
+                "<p>Real article content that is sufficiently long to keep.</p>"
+                "<div class='ad'>Buy now advertisement</div>"
+                "</body></html>")
+        doc = extract.to_document(html, "https://x.test/", fmt="text")
+        self.assertIn("Real article content", doc["content"])
+        self.assertNotIn("Accept all cookies", doc["content"])
+        self.assertNotIn("Buy now advertisement", doc["content"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -24,6 +24,38 @@ def truncate(content, max_length):
     return content, False
 
 
+# Markdown images embedded as base64 data URIs bloat token counts; replace with a placeholder.
+_BASE64_IMG_RE = re.compile(r"(!\[[^\]]*\])\(data:image/[^;]+;base64,[^)]*\)")
+
+# Boilerplate tags and CSS selectors stripped before BeautifulSoup/markdownify extraction.
+_NOISE_TAGS = ["script", "style", "nav", "footer", "header", "aside", "iframe", "noscript"]
+_NOISE_SELECTORS = (
+    ".ad", ".ads", ".adsbygoogle", ".advert", ".advertisement",
+    ".cookie", ".cookies", ".cookie-banner", ".consent", ".gdpr",
+    ".popup", ".modal", ".overlay", ".lightbox",
+    ".newsletter", ".subscribe", ".subscription",
+    ".social", ".social-share", ".social-links", ".share", ".share-buttons", ".sharing",
+    ".breadcrumb", ".breadcrumbs", ".skip-link", ".sr-only",
+    "#ad", "#ads", "#cookie", "#cookie-banner", "#consent", "#popup", "#modal", "#newsletter",
+    "[role='banner']", "[role='complementary']",
+)
+
+
+def strip_base64_images(markdown):
+    """Replace base64 data-URI images in Markdown with a small placeholder to save tokens."""
+    return _BASE64_IMG_RE.sub(r"\1(<base64-image-removed>)", markdown)
+
+
+def _remove_noise(soup):
+    """Decompose boilerplate tags and common ad/cookie/social/nav selectors in place."""
+    for tag in soup(_NOISE_TAGS):
+        tag.decompose()
+    for selector in _NOISE_SELECTORS:
+        for el in soup.select(selector):
+            el.decompose()
+    return soup
+
+
 def _trafilatura_doc(html, url):
     import trafilatura
     content = trafilatura.extract(
@@ -32,6 +64,7 @@ def _trafilatura_doc(html, url):
     )
     if not content:
         return None
+    content = strip_base64_images(content)
     meta = {}
     raw = trafilatura.extract(html, url=url, output_format="json", with_metadata=True,
                               include_links=False)
@@ -59,10 +92,8 @@ def _main_node(soup):
 
 def _markdownify_doc(html, url):
     from markdownify import markdownify
-    soup = BeautifulSoup(html, "html.parser")
-    for tag in soup(["script", "style", "nav", "footer", "header", "aside", "iframe", "noscript"]):
-        tag.decompose()
-    content = markdownify(str(_main_node(soup))).strip()
+    soup = _remove_noise(BeautifulSoup(html, "html.parser"))
+    content = strip_base64_images(markdownify(str(_main_node(soup))).strip())
     if not content:
         return None
     doc = dict(_EMPTY_DOC)
@@ -74,8 +105,7 @@ def _markdownify_doc(html, url):
 def _bs4_text_doc(html, selector=None):
     soup = BeautifulSoup(html, "html.parser")
     title = soup.title.get_text(strip=True) if soup.title else ""
-    for tag in soup(["script", "style", "nav", "footer", "header", "aside", "iframe", "noscript"]):
-        tag.decompose()
+    _remove_noise(soup)
     if selector:
         nodes = soup.select(selector)
         text = "\n\n".join(n.get_text(separator="\n", strip=True) for n in nodes) \
