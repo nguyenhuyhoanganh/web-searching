@@ -1,0 +1,11 @@
+{
+  "skills": ["web-research"],
+  "query": "What is the latest stable version of Node.js, and when was it released?",
+  "files": [],
+  "expected_behavior": [
+    "Recognizes this is time-sensitive information to look up rather than answer from memory",
+    "Searches for an authoritative source (nodejs.org or the official releases page)",
+    "Uses web_read on that source and reports the version number and release date",
+    "Cites the source URL and states the date because the information is time-sensitive"
+  ]
+}

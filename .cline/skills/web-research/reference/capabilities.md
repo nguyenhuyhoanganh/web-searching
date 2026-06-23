@@ -2,6 +2,13 @@
 
 All commands use `<PY>` (the detected Python) and `<SKILL>` (the located skill folder).
 
+## Contents
+- doctor.py — environment & dependency report
+- web_search.py — search the web (+ optional full content)
+- web_read.py — read a URL as Markdown (render JS, PDF, actions, links)
+- web_map.py — discover a site's URLs
+- web_crawl.py — bounded same-domain crawl
+
 ## doctor.py
 `<PY> "<SKILL>/scripts/doctor.py"` — prints skill dir, Python version, and per-group dependency
 status with exact install commands. Installs nothing.

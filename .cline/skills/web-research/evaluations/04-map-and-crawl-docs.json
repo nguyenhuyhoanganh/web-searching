@@ -1,0 +1,11 @@
+{
+  "skills": ["web-research"],
+  "query": "Gather the pages under the asyncio section of the Python documentation so I can ask questions about them.",
+  "files": [],
+  "expected_behavior": [
+    "Uses web_map or web_crawl to discover relevant same-domain URLs instead of guessing them",
+    "Bounds the work (e.g. --search asyncio with sensible --max-pages / --max-depth) to avoid runaway crawling",
+    "Collects the page content as Markdown via web_read or web_crawl",
+    "Reports which URLs were used as sources"
+  ]
+}
