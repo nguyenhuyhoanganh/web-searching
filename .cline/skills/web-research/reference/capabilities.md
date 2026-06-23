@@ -49,7 +49,8 @@ PDFs are detected automatically and parsed with `pypdf` (asks to install if miss
 - `--include-subdomains`
 - `--json`
 
-Sources: `<origin>/sitemap.xml` (+ sitemap indexes) and homepage links, same-domain only.
+Sources: `<origin>/sitemap.xml`, sitemaps listed in `robots.txt`, nested sitemap indexes and
+gzipped (`.gz`) sitemaps, plus homepage links — same-domain only.
 
 ## web_crawl.py
 `<PY> "<SKILL>/scripts/web_crawl.py" "<start-url>" [flags]`
@@ -59,4 +60,5 @@ Sources: `<origin>/sitemap.xml` (+ sitemap indexes) and homepage links, same-dom
 - `--search SUBSTR` — keep only pages whose URL/content contains this substring
 - `--render auto|never|always` (default never)
 - `--delay MS` — politeness delay between requests
+- `--ignore-robots` — crawl URLs even if robots.txt disallows them (default: respect robots.txt)
 - `--format markdown|json` (default markdown)

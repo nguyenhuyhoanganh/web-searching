@@ -50,13 +50,18 @@ Requires Python 3.10+ and internet access.
 
 ## Capabilities
 
-- **Clean Markdown output** — trafilatura → markdownify → BeautifulSoup fallback chain.
+- **Clean Markdown output** — trafilatura → markdownify → BeautifulSoup fallback chain; strips
+  base64 images and ad/cookie/social/consent boilerplate to save tokens.
+- **Rich metadata** — title, author, date, site name, language, keywords, og:image (from
+  trafilatura plus `og:`/`article:`/meta tags).
 - **JavaScript rendering** — optional Playwright engine with actions (click, scroll, wait, write,
   press) and screenshots; automatic fallback to static fetch.
 - **PDF parsing** — detected automatically, extracted with pypdf.
 - **Full-content search** — `web_search --fetch` returns Markdown for the top results.
-- **Map & crawl** — discover a site's URLs, or crawl a bounded section into Markdown.
-- **Robust fetching** — shared headers, SSL-verify fallback, retry with backoff.
+- **Map & crawl** — discover a site's URLs (sitemap.xml, robots.txt sitemaps, `.gz`), or crawl a
+  bounded section into Markdown; crawling respects robots.txt by default.
+- **Robust fetching** — shared headers, SSL-verify fallback, retry with backoff. UTF-8 output so
+  non-ASCII content prints correctly on Windows.
 
 ## Dependencies
 
