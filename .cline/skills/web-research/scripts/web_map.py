@@ -6,6 +6,7 @@ Examples:
     python web_map.py "https://example.com" --search blog --json
 """
 import argparse
+import gzip
 import json
 import os
 import re
@@ -21,7 +22,24 @@ from lib import env, extract, http  # noqa: E402
 env.force_utf8()
 
 _LOC_RE = re.compile(r"<loc>\s*([^<\s]+)\s*</loc>", re.I)
+_SITEMAP_RE = re.compile(r"(?im)^\s*Sitemap:\s*(\S+)\s*$")
 _MAX_SITEMAPS = 20
+
+
+def _sitemaps_from_robots(text):
+    """Return the sitemap URLs listed in a robots.txt body (Sitemap: directives)."""
+    return _SITEMAP_RE.findall(text or "")
+
+
+def _decode_sitemap(content_bytes, url):
+    """Decode sitemap bytes to text, gunzipping when the URL ends in .gz."""
+    if url.lower().endswith(".gz"):
+        content_bytes = gzip.decompress(content_bytes)
+    return content_bytes.decode("utf-8", "replace")
+
+
+def _sitemap_text(url):
+    return _decode_sitemap(http.get(url).content, url)
 
 
 def _same_site(url, host, include_subdomains):
@@ -37,7 +55,7 @@ def _collect_sitemap(start_url, host, include_subdomains, seen_maps):
         return []
     seen_maps.add(start_url)
     try:
-        text = http.get(start_url).text
+        text = _sitemap_text(start_url)
     except Exception:
         return []
     locs = _LOC_RE.findall(text)
@@ -61,8 +79,15 @@ def map_site(start_url, include_subdomains=False, limit=200, search=None):
                 seen.add(u)
                 urls.append(u)
 
-    for u in _collect_sitemap(urljoin(origin, "/sitemap.xml"), host, include_subdomains, set()):
-        add(u)
+    sitemap_roots = [urljoin(origin, "/sitemap.xml")]
+    try:
+        sitemap_roots += _sitemaps_from_robots(http.get(urljoin(origin, "/robots.txt")).text)
+    except Exception:
+        pass
+    seen_maps = set()
+    for root in sitemap_roots:
+        for u in _collect_sitemap(root, host, include_subdomains, seen_maps):
+            add(u)
     try:
         home = http.get(start_url)
         for link in extract.extract_links(home.text, start_url):
