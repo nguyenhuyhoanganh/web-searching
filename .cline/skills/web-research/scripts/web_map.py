@@ -16,7 +16,9 @@ SKILL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if SKILL_DIR not in sys.path:
     sys.path.insert(0, SKILL_DIR)
 
-from lib import extract, http  # noqa: E402
+from lib import env, extract, http  # noqa: E402
+
+env.force_utf8()
 
 _LOC_RE = re.compile(r"<loc>\s*([^<\s]+)\s*</loc>", re.I)
 _MAX_SITEMAPS = 20

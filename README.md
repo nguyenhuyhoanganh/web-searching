@@ -33,9 +33,10 @@ description are preloaded; the full `SKILL.md` is read only when the skill activ
 ```bash
 pip install requests beautifulsoup4 lxml ddgs trafilatura markdownify
 
-# Optional extras (installed on demand)
-pip install playwright && playwright install chromium   # JS rendering / actions
-pip install pypdf                                        # reading PDFs
+# Optional extras (installed on demand). Run as two commands (Windows PowerShell 5.1 has no &&):
+pip install playwright   # JS rendering / actions
+playwright install chromium
+pip install pypdf        # reading PDFs
 
 # Check your environment
 python .cline/skills/web-research/scripts/doctor.py

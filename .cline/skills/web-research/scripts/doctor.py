@@ -13,6 +13,8 @@ if SKILL_DIR not in sys.path:
 
 from lib import env  # noqa: E402
 
+env.force_utf8()
+
 # pip command per group, in the order a user would install them.
 GROUP_HINTS = {
     "core": "pip install requests beautifulsoup4 lxml",

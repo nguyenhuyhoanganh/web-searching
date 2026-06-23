@@ -1,6 +1,7 @@
 """Environment helpers: dependency groups, dependency checks, skill-dir discovery."""
 import importlib.util
 import os
+import sys
 
 SKILL_NAME = "web-research"
 
@@ -55,3 +56,17 @@ def missing_pip_packages(groups=None):
             if not _is_installed(imp):
                 missing.append(pip)
     return missing
+
+
+def force_utf8():
+    """Emit UTF-8 on stdout/stderr.
+
+    On Windows, when output is piped (as agents capture it) Python encodes with the ANSI code page
+    (e.g. cp1252/cp1258), so printing non-ASCII web content raises UnicodeEncodeError. Reconfiguring
+    to UTF-8 prevents that. No-op where the streams cannot be reconfigured.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8")
+        except (AttributeError, ValueError):
+            pass

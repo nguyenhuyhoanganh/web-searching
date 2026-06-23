@@ -1,4 +1,5 @@
 import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -42,6 +43,23 @@ class TestFindSkillDir(unittest.TestCase):
             with mock.patch("os.getcwd", return_value=tmp), \
                  mock.patch("os.path.expanduser", return_value=os.path.join(tmp, "nohome")):
                 self.assertIsNone(env.find_skill_dir())
+
+
+class TestForceUtf8(unittest.TestCase):
+    def test_unicode_prints_under_legacy_codepage(self):
+        # Simulates a Windows ANSI code page (cp1252) with piped (captured) output, where
+        # printing non-ASCII would raise UnicodeEncodeError without force_utf8().
+        code = (
+            f"import sys; sys.path.insert(0, {SKILL_DIR!r});"
+            "from lib import env; env.force_utf8();"
+            "print('Tiếng Việt 日本語')"
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", code], capture_output=True,
+            env=dict(os.environ, PYTHONIOENCODING="cp1252"), text=True, encoding="utf-8",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Tiếng Việt", result.stdout)
 
 
 if __name__ == "__main__":

@@ -17,7 +17,9 @@ SKILL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if SKILL_DIR not in sys.path:
     sys.path.insert(0, SKILL_DIR)
 
-from lib import engines, extract  # noqa: E402
+from lib import engines, env, extract  # noqa: E402
+
+env.force_utf8()
 
 
 def _same_site(url, host, include_subdomains):

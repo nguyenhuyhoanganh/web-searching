@@ -20,7 +20,9 @@ if SKILL_DIR not in sys.path:
 
 from bs4 import BeautifulSoup  # noqa: E402
 
-from lib import engines, extract, http  # noqa: E402
+from lib import engines, env, extract, http  # noqa: E402
+
+env.force_utf8()
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s", stream=sys.stderr)
