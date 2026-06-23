@@ -76,13 +76,24 @@ in the codebase/context (read the file instead); pure reasoning or computation.
 
 If a read returns very little content, the page is probably JavaScript-rendered: re-run with
 `--render always` (offer to install Playwright first if it is not installed). Full flag reference:
-`reference/capabilities.md`.
+[reference/capabilities.md](reference/capabilities.md).
+
+## Reference docs
+
+Read these bundled files when relevant. They sit in this skill's `reference/` folder — if a bare
+relative path does not resolve (for example the skill is installed globally and the workspace is a
+different folder), read them at `<SKILL>/reference/` instead.
+
+- [reference/search-strategy.md](reference/search-strategy.md) — query design, search operators,
+  good vs bad examples, source priority, and a claim-verification workflow. Read before crafting a
+  query or verifying pasted content.
+- [reference/capabilities.md](reference/capabilities.md) — the full CLI flag reference for every tool.
 
 ## Workflow (in order)
 
 1. **Decompose the request**: list the claims to verify, entities, versions, time markers.
 2. **Decide whether a search is even needed.** If not, answer directly.
-3. **Design the query** — one goal per query (details: `reference/search-strategy.md`).
+3. **Design the query** — one goal per query (see [reference/search-strategy.md](reference/search-strategy.md)).
 4. **Run `web_search`** and read results: prefer authoritative sources, note the *date* and *domain*.
 5. **`web_read` the most trustworthy source** to confirm — never conclude from snippets alone.
 6. **Cross-check 2+ sources** when the information is important or sources disagree.
@@ -90,7 +101,7 @@ If a read returns very little content, the page is probably JavaScript-rendered:
 8. **Conclude and cite (URL)** with a verdict: **TRUE / FALSE / OUTDATED / INSUFFICIENT EVIDENCE**.
 
 When the user pastes content to verify, or you need to craft a good query, read
-`reference/search-strategy.md`.
+[reference/search-strategy.md](reference/search-strategy.md).
 
 ## Query privacy
 
