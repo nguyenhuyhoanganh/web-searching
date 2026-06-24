@@ -37,6 +37,7 @@ pip install requests beautifulsoup4 lxml ddgs trafilatura markdownify
 pip install playwright   # JS rendering / actions
 playwright install chromium
 pip install pypdf        # reading PDFs
+pip install curl_cffi    # bypass TLS-fingerprint bot blocks
 
 # Check your environment
 python .cline/skills/web-research/scripts/doctor.py
@@ -60,6 +61,8 @@ Requires Python 3.10+ and internet access.
 - **Full-content search** — `web_search --fetch` returns Markdown for the top results.
 - **Map & crawl** — discover a site's URLs (sitemap.xml, robots.txt sitemaps, `.gz`), or crawl a
   bounded section into Markdown; crawling respects robots.txt by default.
+- **Access options** — route through a proxy (`--proxy` / `WEB_RESEARCH_PROXY`) and optional curl_cffi
+  TLS impersonation (`--impersonate`) to get past corporate proxies and TLS-fingerprint bot blocks.
 - **Robust fetching** — shared headers, SSL-verify fallback, retry with backoff. UTF-8 output so
   non-ASCII content prints correctly on Windows.
 
@@ -72,6 +75,8 @@ Requires Python 3.10+ and internet access.
 | extract | `trafilatura`, `markdownify` | clean Markdown + metadata |
 | render (optional) | `playwright` | JS pages, actions, screenshots |
 | pdf (optional) | `pypdf` | read PDFs |
+| impersonate (optional) | `curl_cffi` | bypass TLS-fingerprint bot blocks |
+| impersonate (optional) | `curl_cffi` | bypass TLS-fingerprint bot blocks |
 
 The scripts check dependencies and fall back gracefully; `SKILL.md` has the agent ask before
 installing anything.

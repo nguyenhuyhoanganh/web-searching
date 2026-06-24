@@ -75,8 +75,10 @@ in the codebase/context (read the file instead); pure reasoning or computation.
 ```
 
 If a read returns very little content, the page is probably JavaScript-rendered: re-run with
-`--render always` (offer to install Playwright first if it is not installed). Full flag reference:
-[reference/capabilities.md](reference/capabilities.md).
+`--render always` (offer to install Playwright first if it is not installed). If a page is blocked as
+a bot (HTTP 403 or a challenge wall), try `--impersonate` (curl_cffi, real Chrome TLS fingerprint) or
+route through a proxy with `--proxy <url>` / the `WEB_RESEARCH_PROXY` env var — offer to install
+curl_cffi first if needed. Full flag reference: [reference/capabilities.md](reference/capabilities.md).
 
 ## Reference docs
 
