@@ -37,12 +37,14 @@ Run: `<PY> "<SKILL>/scripts/doctor.py"`
 It reports Python and which dependency groups are installed or missing, with the exact install
 command for each.
 
-### Step 4 — Install only what is needed, and ask first
-Only the `core` group is required. `search` and `extract` make results much better; `render`
-(Playwright) and `pdf` are used on demand. If something needed is missing, tell the user exactly
-which packages and the command, and install only after they agree. For example:
+### Step 4 — Install what's needed, and ask first
+The needed baseline is the `core`, `search`, and `extract` groups — install them so the skill works
+well (ask the user, then run):
 `<PY> -m pip install requests beautifulsoup4 lxml ddgs trafilatura markdownify`
-Never install without asking.
+Every other group is optional and installed only when a task actually needs it — ask the user each
+time before installing: `render` (Playwright — JS pages/actions), `pdf` (pypdf), `office`
+(mammoth, openpyxl — DOCX/XLSX), `impersonate` (curl_cffi — bypass bot blocks). Always name the exact
+packages and the command, and install only after the user agrees. Never install without asking.
 
 ## When to use — when not to
 
