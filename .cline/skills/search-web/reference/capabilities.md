@@ -13,7 +13,7 @@ and Google HTML scraping when the API is rate-limited. No API key required.
 ### Usage
 
 ```
-python3 .cline/skills/web-research/scripts/web_search.py "<query>" [options]
+python3 .cline/skills/search-web/scripts/web_search.py "<query>" [options]
 ```
 
 ### Positional argument
@@ -77,25 +77,25 @@ with SSL verification disabled for the rest of the session. A warning is logged 
 
 ```bash
 # Basic search
-python3 .cline/skills/web-research/scripts/web_search.py "Python 3.13 new features"
+python3 .cline/skills/search-web/scripts/web_search.py "Python 3.13 new features"
 
 # More results
-python3 .cline/skills/web-research/scripts/web_search.py "React server components" -n 10
+python3 .cline/skills/search-web/scripts/web_search.py "React server components" -n 10
 
 # Region-specific
-python3 .cline/skills/web-research/scripts/web_search.py "thời tiết Hà Nội" --region vn-vi
+python3 .cline/skills/search-web/scripts/web_search.py "thời tiết Hà Nội" --region vn-vi
 
 # News
-python3 .cline/skills/web-research/scripts/web_search.py "OpenAI latest announcement" --news
+python3 .cline/skills/search-web/scripts/web_search.py "OpenAI latest announcement" --news
 
 # Instant answer
-python3 .cline/skills/web-research/scripts/web_search.py "Python list comprehension" --answers
+python3 .cline/skills/search-web/scripts/web_search.py "Python list comprehension" --answers
 
 # JSON output
-python3 .cline/skills/web-research/scripts/web_search.py "Spring Boot 3.4" --json
+python3 .cline/skills/search-web/scripts/web_search.py "Spring Boot 3.4" --json
 
 # Combine flags
-python3 .cline/skills/web-research/scripts/web_search.py "Vietnam AI startup" --news --region vn-vi -n 10
+python3 .cline/skills/search-web/scripts/web_search.py "Vietnam AI startup" --news --region vn-vi -n 10
 ```
 
 ---
@@ -108,7 +108,7 @@ with BeautifulSoup as fallback. No API key required.
 ### Usage
 
 ```
-python3 .cline/skills/web-research/scripts/web_read.py "<url>" [options]
+python3 .cline/skills/search-web/scripts/web_read.py "<url>" [options]
 ```
 
 ### Positional argument
@@ -172,26 +172,26 @@ With `--raw`: always uses BeautifulSoup (skips trafilatura).
 
 ```bash
 # Read a page (auto-extract main content)
-python3 .cline/skills/web-research/scripts/web_read.py "https://docs.python.org/3/whatsnew/3.13.html"
+python3 .cline/skills/search-web/scripts/web_read.py "https://docs.python.org/3/whatsnew/3.13.html"
 
 # Limit content length (useful for large pages)
-python3 .cline/skills/web-research/scripts/web_read.py "https://en.wikipedia.org/wiki/Python_(programming_language)" -m 5000
+python3 .cline/skills/search-web/scripts/web_read.py "https://en.wikipedia.org/wiki/Python_(programming_language)" -m 5000
 
 # Extract specific section via CSS selector
-python3 .cline/skills/web-research/scripts/web_read.py "https://spring.io/blog" --selector "article"
+python3 .cline/skills/search-web/scripts/web_read.py "https://spring.io/blog" --selector "article"
 
 # Use BeautifulSoup only (skip trafilatura)
-python3 .cline/skills/web-research/scripts/web_read.py "https://example.com" --raw
+python3 .cline/skills/search-web/scripts/web_read.py "https://example.com" --raw
 
 # List all links on a page
-python3 .cline/skills/web-research/scripts/web_read.py "https://github.com/user/repo" --links
+python3 .cline/skills/search-web/scripts/web_read.py "https://github.com/user/repo" --links
 
 # JSON output
-python3 .cline/skills/web-research/scripts/web_read.py "https://example.com" --json
+python3 .cline/skills/search-web/scripts/web_read.py "https://example.com" --json
 
 # Combine: extract links as JSON
-python3 .cline/skills/web-research/scripts/web_read.py "https://docs.python.org/3/" --links --json
+python3 .cline/skills/search-web/scripts/web_read.py "https://docs.python.org/3/" --links --json
 
 # Specific selector + limited length
-python3 .cline/skills/web-research/scripts/web_read.py "https://news.ycombinator.com" --selector "tr.athing" -m 3000
+python3 .cline/skills/search-web/scripts/web_read.py "https://news.ycombinator.com" --selector "tr.athing" -m 3000
 ```

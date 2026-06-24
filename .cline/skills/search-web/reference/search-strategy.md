@@ -1,6 +1,6 @@
 # Search Strategy — query design & verification
 
-Detailed reference for the `web-research` skill. Read this when crafting a good query or verifying content.
+Detailed reference for the `search-web` skill. Read this when crafting a good query or verifying content.
 
 ## Contents
 - Query design

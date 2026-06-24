@@ -1,4 +1,4 @@
-# Web Research — teach your AI to Google (properly)
+# Search Web — teach your AI to Google (properly)
 
 Ever asked your AI assistant about the latest version of a library — and got a confident,
 completely wrong answer? Or watched it hallucinate a URL that doesn't exist?

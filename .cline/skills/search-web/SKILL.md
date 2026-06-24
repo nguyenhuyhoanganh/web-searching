@@ -1,9 +1,9 @@
 ---
-name: web-research
+name: search-web
 description: Searches the web and reads web pages to find and fact-check current information. Use whenever the user shares content to verify, asks about latest versions/releases/news/prices, provides a URL to read or summarize, hits an error message to look up, or mentions a library, framework, or term that should be checked against up-to-date sources instead of answered from memory.
 ---
 
-# Web Research
+# Search Web
 
 Search the web and read page content to find or verify information, using the two scripts in
 `scripts/`. Invoke them from the terminal (`execute_command`) — no MCP and no API key required.
@@ -79,16 +79,16 @@ whichever Python command worked in step 1.
 
 ```bash
 # Search
-python3 .cline/skills/web-research/scripts/web_search.py "Spring Boot latest version Java 21" -n 5
-python3 .cline/skills/web-research/scripts/web_search.py "<query>" --news          # news
-python3 .cline/skills/web-research/scripts/web_search.py "<query>" --region vn-vi  # Vietnam
-python3 .cline/skills/web-research/scripts/web_search.py "<query>" --json          # JSON output
+python3 .cline/skills/search-web/scripts/web_search.py "Spring Boot latest version Java 21" -n 5
+python3 .cline/skills/search-web/scripts/web_search.py "<query>" --news          # news
+python3 .cline/skills/search-web/scripts/web_search.py "<query>" --region vn-vi  # Vietnam
+python3 .cline/skills/search-web/scripts/web_search.py "<query>" --json          # JSON output
 
 # Read a page
-python3 .cline/skills/web-research/scripts/web_read.py "https://..."               # main content
-python3 .cline/skills/web-research/scripts/web_read.py "<url>" --selector "article" # CSS selector
-python3 .cline/skills/web-research/scripts/web_read.py "<url>" --max-length 5000
-python3 .cline/skills/web-research/scripts/web_read.py "<url>" --links             # list links
+python3 .cline/skills/search-web/scripts/web_read.py "https://..."               # main content
+python3 .cline/skills/search-web/scripts/web_read.py "<url>" --selector "article" # CSS selector
+python3 .cline/skills/search-web/scripts/web_read.py "<url>" --max-length 5000
+python3 .cline/skills/search-web/scripts/web_read.py "<url>" --links             # list links
 ```
 
 `web_search`: `-n/--max-results` (default 5), `-r/--region`, `--news`, `--answers`, `--json`.

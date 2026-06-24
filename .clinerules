@@ -1,12 +1,12 @@
-# Cline pointer → web-research skill
+# Cline pointer → search-web skill
 
-This project includes a skill named **web-research** at `.cline/skills/web-research/SKILL.md`.
+This project includes a skill named **search-web** at `.cline/skills/search-web/SKILL.md`.
 
 When you need to **search the web, read page content, or verify information** — e.g. the user gives
 content to verify, asks about the latest version/news/price, provides a URL to read, hits an error
 to look up, or mentions a technology/term that should be checked against up-to-date sources — **read
-`.cline/skills/web-research/SKILL.md` and follow it** (including
-`.cline/skills/web-research/reference/search-strategy.md` when you need to design a query or verify
+`.cline/skills/search-web/SKILL.md` and follow it** (including
+`.cline/skills/search-web/reference/search-strategy.md` when you need to design a query or verify
 claims).
 
 Principle: **do not search blindly.** Decompose the request → decide whether a search is actually

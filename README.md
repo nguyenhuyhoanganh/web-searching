@@ -1,4 +1,4 @@
-# web-research — web search & read skill for Cline (no MCP)
+# search-web — web search & read skill for Cline (no MCP)
 
 A skill that lets Cline **search the web** and **read web pages** without MCP — useful when a
 forked Cline build blocks MCP and ships no web tools. The agent calls two Python scripts through the
@@ -9,10 +9,12 @@ Can you use MCP? See branch `claude/cline-search-web-skills-yc36cf` (the MCP ser
 ## Structure
 
 ```
-.cline/skills/web-research/         # Cline auto-discovers skills in .cline/skills/
+.cline/skills/search-web/           # Cline auto-discovers skills in .cline/skills/
 ├── SKILL.md                        # frontmatter (name, description) + main instructions
+├── ABOUT.md                        # short pitch / description
 ├── reference/
-│   └── search-strategy.md          # detail: query design, good/bad examples, verification, privacy
+│   ├── search-strategy.md          # detail: query design, good/bad examples, verification, privacy
+│   └── capabilities.md             # complete flag & feature reference for both scripts
 ├── scripts/
 │   ├── web_search.py               # search (DuckDuckGo, Google fallback) — no API key
 │   └── web_read.py                 # extract main content (trafilatura + BeautifulSoup)
@@ -30,8 +32,8 @@ preloaded at startup; the full `SKILL.md` is read only when the skill activates;
 pip install requests beautifulsoup4 ddgs trafilatura lxml
 
 # Test
-python3 .cline/skills/web-research/scripts/web_search.py "python 3.13 release date" -n 3
-python3 .cline/skills/web-research/scripts/web_read.py "https://example.com"
+python3 .cline/skills/search-web/scripts/web_search.py "python 3.13 release date" -n 3
+python3 .cline/skills/search-web/scripts/web_read.py "https://example.com"
 ```
 
 Requires Python 3.10+, internet access, **no API key**.
@@ -41,10 +43,10 @@ first use.
 
 ## Sharing with your team
 
-Copy the `.cline/skills/web-research/` directory and the `.clinerules` file into any workspace.
+Copy the `.cline/skills/search-web/` directory and the `.clinerules` file into any workspace.
 Cline will auto-detect the skill and install dependencies on first use.
 
-Alternatively, copy `web-research/` to `~/.cline/skills/` (global) so it applies to all projects.
+Alternatively, copy `search-web/` to `~/.cline/skills/` (global) so it applies to all projects.
 
 ## Robustness
 
@@ -66,13 +68,12 @@ No manual calls needed — chat normally and the agent uses it per `SKILL.md`:
 ## Running the scripts directly (reference)
 
 ```bash
-SKILL_DIR=".cline/skills/web-research"
-python3 "$SKILL_DIR/scripts/web_search.py" "<query>" -n 5
-python3 "$SKILL_DIR/scripts/web_search.py" "<query>" --news            # news
-python3 "$SKILL_DIR/scripts/web_search.py" "<query>" --region vn-vi    # Vietnam region
-python3 "$SKILL_DIR/scripts/web_read.py" "<url>"
-python3 "$SKILL_DIR/scripts/web_read.py" "<url>" --selector "article"  # specific part via CSS
-python3 "$SKILL_DIR/scripts/web_read.py" "<url>" --links               # list links
+python3 .cline/skills/search-web/scripts/web_search.py "<query>" -n 5
+python3 .cline/skills/search-web/scripts/web_search.py "<query>" --news            # news
+python3 .cline/skills/search-web/scripts/web_search.py "<query>" --region vn-vi    # Vietnam region
+python3 .cline/skills/search-web/scripts/web_read.py "<url>"
+python3 .cline/skills/search-web/scripts/web_read.py "<url>" --selector "article"  # specific part via CSS
+python3 .cline/skills/search-web/scripts/web_read.py "<url>" --links               # list links
 ```
 
 ## The "don't search blindly" mechanism
