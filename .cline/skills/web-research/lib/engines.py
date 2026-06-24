@@ -61,7 +61,7 @@ def render_html(url, wait_for=None, scroll=0, actions=None, screenshot=None, tim
         )
     from playwright.sync_api import sync_playwright
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(headless=True, proxy=http.playwright_proxy())
         try:
             page = browser.new_page(user_agent=http.DEFAULT_HEADERS["User-Agent"])
             page.goto(url, wait_until="networkidle", timeout=timeout_ms)

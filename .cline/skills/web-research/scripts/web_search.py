@@ -143,8 +143,10 @@ def main():
     parser.add_argument("--fetch", "--scrape", action="store_true", dest="fetch",
                         help="Fetch full Markdown content of the top results")
     parser.add_argument("--fetch-count", type=int, default=3)
+    parser.add_argument("--proxy", help="Proxy URL (e.g. http://host:port); or set WEB_RESEARCH_PROXY")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
+    http.set_proxy(args.proxy)
     try:
         results = search_web(args.query, args.max_results, args.region, args.news)
         if args.fetch:

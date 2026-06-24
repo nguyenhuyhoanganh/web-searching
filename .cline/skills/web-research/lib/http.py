@@ -1,6 +1,12 @@
-"""Shared HTTP GET: realistic headers, automatic SSL-verify fallback, retry with backoff."""
+"""Shared HTTP GET: realistic headers, automatic SSL-verify fallback, retry with backoff.
+
+Optional proxy: set the WEB_RESEARCH_PROXY (or standard HTTPS_PROXY) environment variable, or pass
+--proxy on the CLI. The proxy is applied to requests, curl_cffi, and Playwright alike.
+"""
 import logging
+import os
 import time
+from urllib.parse import urlparse
 
 import requests
 
@@ -18,6 +24,45 @@ DEFAULT_HEADERS = {
 # Disabled automatically on the first SSLError (common behind corporate proxies).
 _verify_ssl = True
 
+# Explicit proxy set from the CLI (--proxy); overrides environment variables when present.
+_proxy_override = None
+
+
+def set_proxy(url):
+    """Set an explicit proxy URL (CLI). Pass a falsy value to clear it."""
+    global _proxy_override
+    _proxy_override = url or None
+
+
+def current_proxy():
+    """Return the active proxy URL: CLI override, then WEB_RESEARCH_PROXY / HTTPS_PROXY env."""
+    return (
+        _proxy_override
+        or os.environ.get("WEB_RESEARCH_PROXY")
+        or os.environ.get("HTTPS_PROXY")
+        or os.environ.get("https_proxy")
+        or None
+    )
+
+
+def _requests_proxies():
+    proxy = current_proxy()
+    return {"http": proxy, "https": proxy} if proxy else None
+
+
+def playwright_proxy():
+    """Return a Playwright proxy dict ({server[, username, password]}) or None."""
+    proxy = current_proxy()
+    if not proxy:
+        return None
+    parsed = urlparse(proxy if "://" in proxy else "http://" + proxy)
+    server = f"{parsed.scheme}://{parsed.hostname}" + (f":{parsed.port}" if parsed.port else "")
+    config = {"server": server}
+    if parsed.username:
+        config["username"] = parsed.username
+        config["password"] = parsed.password or ""
+    return config
+
 
 def get(url, timeout=30, retries=3):
     """GET a URL, returning a requests.Response. Retries connection/timeout errors with backoff."""
@@ -27,7 +72,7 @@ def get(url, timeout=30, retries=3):
         try:
             resp = requests.get(
                 url, headers=DEFAULT_HEADERS, timeout=timeout,
-                allow_redirects=True, verify=_verify_ssl,
+                allow_redirects=True, verify=_verify_ssl, proxies=_requests_proxies(),
             )
             resp.raise_for_status()
             return resp

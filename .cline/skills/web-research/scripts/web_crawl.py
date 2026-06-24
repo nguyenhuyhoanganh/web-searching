@@ -17,7 +17,7 @@ SKILL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if SKILL_DIR not in sys.path:
     sys.path.insert(0, SKILL_DIR)
 
-from lib import engines, env, extract, robots  # noqa: E402
+from lib import engines, env, extract, http, robots  # noqa: E402
 
 env.force_utf8()
 
@@ -70,8 +70,10 @@ def main():
     parser.add_argument("--delay", type=int, default=0, help="Delay between requests (ms)")
     parser.add_argument("--ignore-robots", action="store_true",
                         help="Crawl URLs even if robots.txt disallows them (default: respect robots)")
+    parser.add_argument("--proxy", help="Proxy URL (e.g. http://host:port); or set WEB_RESEARCH_PROXY")
     parser.add_argument("--format", choices=["markdown", "json"], default="markdown")
     args = parser.parse_args()
+    http.set_proxy(args.proxy)
     try:
         pages = crawl(args.url, args.max_pages, args.max_depth, args.include_subdomains,
                       args.search, args.render, args.delay, not args.ignore_robots)

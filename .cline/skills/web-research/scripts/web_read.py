@@ -16,7 +16,7 @@ SKILL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if SKILL_DIR not in sys.path:
     sys.path.insert(0, SKILL_DIR)
 
-from lib import engines, env, extract, pdf  # noqa: E402
+from lib import engines, env, extract, http, pdf  # noqa: E402
 
 env.force_utf8()
 
@@ -56,8 +56,10 @@ def main():
     parser.add_argument("--links", action="store_true", help="List links instead of content")
     parser.add_argument("--screenshot", help="Save a full-page screenshot to this path (needs render)")
     parser.add_argument("--raw", action="store_true", help="BeautifulSoup plain text only")
+    parser.add_argument("--proxy", help="Proxy URL (e.g. http://host:port); or set WEB_RESEARCH_PROXY")
     parser.add_argument("--json", action="store_true", help="Output JSON")
     args = parser.parse_args()
+    http.set_proxy(args.proxy)
 
     render = "always" if args.js else args.render
     actions = json.loads(args.actions) if args.actions else None
