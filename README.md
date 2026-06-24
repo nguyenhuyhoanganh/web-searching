@@ -81,7 +81,6 @@ Requires Python 3.10+ and internet access.
 | pdf (optional) | `pypdf` | read PDFs |
 | office (optional) | `mammoth`, `openpyxl` | read DOCX / XLSX |
 | impersonate (optional) | `curl_cffi` | bypass TLS-fingerprint bot blocks |
-| impersonate (optional) | `curl_cffi` | bypass TLS-fingerprint bot blocks |
 
 The scripts check dependencies and fall back gracefully; `SKILL.md` has the agent ask before
 installing anything.

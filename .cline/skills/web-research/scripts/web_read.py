@@ -109,6 +109,9 @@ def main():
         except RuntimeError as e:
             print(f"Error: {e}", file=sys.stderr)
             sys.exit(2)
+        except Exception as e:
+            print(f"Error: could not parse PDF: {e}", file=sys.stderr)
+            sys.exit(1)
     elif office_kind:
         try:
             doc = office.extract_office(result["content_bytes"], office_kind)
@@ -116,6 +119,9 @@ def main():
         except RuntimeError as e:
             print(f"Error: {e}", file=sys.stderr)
             sys.exit(2)
+        except Exception as e:
+            print(f"Error: could not parse {office_kind.upper()}: {e}", file=sys.stderr)
+            sys.exit(1)
     else:
         fmt = "text" if args.raw else args.format
         doc = extract.to_document(html, url, fmt=fmt, selector=args.selector)
