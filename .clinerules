@@ -5,9 +5,8 @@ This project includes a skill named **web-research** at `.cline/skills/web-resea
 When you need to **search the web, read page content, or verify information** — e.g. the user gives
 content to verify, asks about the latest version/news/price, provides a URL to read, hits an error
 to look up, or mentions a technology/term that should be checked against up-to-date sources — **read
-`.cline/skills/web-research/SKILL.md` and follow it** (including
-`.cline/skills/web-research/reference/search-strategy.md` when you need to design a query or verify
-claims).
+`.cline/skills/web-research/SKILL.md` and follow it** — it now contains the search-strategy guidance
+(query design, search operators, verification) inline, so there is nothing else to open.
 
 Principle: **do not search blindly.** Decompose the request → decide whether a search is actually
 needed → one goal per query, using precise terms → read the original source, not just the snippet →
