@@ -42,7 +42,8 @@ def main():
         if missing:
             print(f"          install:  {GROUP_HINTS[group]}")
     print("")
-    print("Note: only the 'core' group is required. Others are optional and used on demand.")
+    print("Baseline (install these): core + search + extract.")
+    print("Optional (installed on demand, ask first): render, pdf, office, impersonate.")
 
 
 if __name__ == "__main__":
