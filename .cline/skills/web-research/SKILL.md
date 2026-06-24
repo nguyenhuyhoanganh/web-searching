@@ -28,7 +28,7 @@ Use whichever worked as `<PY>` for every command below.
 ### Step 2 — Locate this skill's folder
 The skill may be installed in the workspace or in your home folder. Find it with one command:
 
-`<PY> -c "import os;n='web-research';cwd=os.getcwd();h=os.path.expanduser('~');c=[os.path.join(cwd,a,'skills',n) for a in ('.cline','.clinerules','.claude','.agent')]+[os.path.join(h,a,'skills',n) for a in ('.cline','.agent','.claude')];print(next((p for p in c if os.path.isdir(p)),'NOTFOUND'))"`
+`<PY> -c "import os;n='web-research';cwd=os.getcwd();h=os.path.expanduser('~');c=[os.path.join(cwd,a,'skills',n) for a in ('.cline','.clinerules','.claude','.agents')]+[os.path.join(h,a,'skills',n) for a in ('.cline','.agents','.claude')];print(next((p for p in c if os.path.isdir(p)),'NOTFOUND'))"`
 
 It prints the skill folder. Use it as `<SKILL>` below.
 

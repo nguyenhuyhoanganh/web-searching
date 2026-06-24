@@ -146,9 +146,9 @@ DEP_GROUPS = {
     "pdf":     [("pypdf", "pypdf")],
 }
 
-# Project- and home-level roots Cline scans for skills (incl. cross-agent .agent).
-_PROJECT_ROOTS = (".cline", ".clinerules", ".claude", ".agent")
-_HOME_ROOTS = (".cline", ".agent", ".claude")
+# Project- and home-level roots Cline scans for skills (incl. cross-agent .agents).
+_PROJECT_ROOTS = (".cline", ".clinerules", ".claude", ".agents")
+_HOME_ROOTS = (".cline", ".agents", ".claude")
 
 
 def _candidate_dirs():
@@ -1373,7 +1373,7 @@ Use whichever worked as `<PY>` for every command below.
 ### Step 2 — Locate this skill's folder
 The skill may be installed in the workspace or in your home folder. Find it with one command:
 
-`<PY> -c "import os;n='web-research';cwd=os.getcwd();h=os.path.expanduser('~');c=[os.path.join(cwd,a,'skills',n) for a in ('.cline','.clinerules','.claude','.agent')]+[os.path.join(h,a,'skills',n) for a in ('.cline','.agent','.claude')];print(next((p for p in c if os.path.isdir(p)),'NOTFOUND'))"`
+`<PY> -c "import os;n='web-research';cwd=os.getcwd();h=os.path.expanduser('~');c=[os.path.join(cwd,a,'skills',n) for a in ('.cline','.clinerules','.claude','.agents')]+[os.path.join(h,a,'skills',n) for a in ('.cline','.agents','.claude')];print(next((p for p in c if os.path.isdir(p)),'NOTFOUND'))"`
 
 It prints the skill folder. Use it as `<SKILL>` below.
 
@@ -1543,7 +1543,7 @@ blindly**.
 ```
 
 Cline loads skills from `.cline/skills/` (and `.clinerules/skills/`, `.claude/skills/`,
-`.agent/skills/`, or the matching `~/...` global folders) automatically. The skill name and
+`.agents/skills/`, or the matching `~/...` global folders) automatically. The skill name and
 description are preloaded; the full `SKILL.md` is read only when the skill activates.
 
 ## Install
@@ -1647,7 +1647,7 @@ Expected: `Extraction: ...` with `engine_used` playwright path exercised (no err
 - **Spec coverage:** env/doctor (T1,T6), http+SSL/retry (T2), Markdown extract+metadata+links (T3),
   PDF (T4), engines+render+actions+selection (T5), web_read rewrite incl. setup.sh removal (T7),
   web_search +full content +setup.sh removal (T8), map (T9), crawl (T10), requirements+SKILL.md
-  (Windows Python fix, path probe incl. `.agent`, ask-before-install, no MCP/key wording)
+  (Windows Python fix, path probe incl. `.agents`, ask-before-install, no MCP/key wording)
   +capabilities+README cleanup (T11), live smoke (T12). All spec sections mapped.
 - **Type/name consistency:** `find_skill_dir`, `check_deps`, `missing_pip_packages`, `DEP_GROUPS`,
   `SKILL_NAME` (env); `get` (http); `to_document`, `extract_links`, `truncate` (extract);

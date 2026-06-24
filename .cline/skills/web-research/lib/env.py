@@ -16,9 +16,9 @@ DEP_GROUPS = {
     "impersonate": [("curl_cffi", "curl_cffi")],
 }
 
-# Project- and home-level roots Cline scans for skills (incl. cross-agent .agent).
-_PROJECT_ROOTS = (".cline", ".clinerules", ".claude", ".agent")
-_HOME_ROOTS = (".cline", ".agent", ".claude")
+# Project- and home-level roots Cline scans for skills (incl. cross-agent .agents).
+_PROJECT_ROOTS = (".cline", ".clinerules", ".claude", ".agents")
+_HOME_ROOTS = (".cline", ".agents", ".claude")
 
 
 def _candidate_dirs():

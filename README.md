@@ -25,7 +25,7 @@ blindly**.
 ```
 
 Cline loads skills from `.cline/skills/` (and `.clinerules/skills/`, `.claude/skills/`,
-`.agent/skills/`, or the matching `~/...` global folders) automatically. The skill name and
+`.agents/skills/`, or the matching `~/...` global folders) automatically. The skill name and
 description are preloaded; the full `SKILL.md` is read only when the skill activates.
 
 ## Install

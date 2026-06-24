@@ -33,10 +33,10 @@ scripts only deliver clean, faithful content.
 ## Skill install locations & path resolution
 
 A skill directory named `web-research` may live in any of these (confirmed against Cline docs, plus
-`.agent/` which Cline also reads for cross-agent skills):
+`.agents/` which Cline also reads for cross-agent skills):
 
-- Project: `<workspace>/.cline/skills/`, `.clinerules/skills/`, `.claude/skills/`, `.agent/skills/`
-- Global: `~/.cline/skills/`, `~/.agent/skills/`, `~/.claude/skills/`
+- Project: `<workspace>/.cline/skills/`, `.clinerules/skills/`, `.claude/skills/`, `.agents/skills/`
+- Global: `~/.cline/skills/`, `~/.agents/skills/`, `~/.claude/skills/`
   (on Windows `~` ⇒ `C:\Users\USERNAME`)
 
 **Problem:** the agent must run the *right* copy of a script, but it cannot assume the terminal's CWD
@@ -44,7 +44,7 @@ is the skill dir. **Solution:** locate the skill dir with one cross-platform Pyt
 `os.path.expanduser("~")` resolves `%USERPROFILE%` on Windows; `os.getcwd()` is the workspace root):
 
 ```
-<PY> -c "import os;n='web-research';cwd=os.getcwd();h=os.path.expanduser('~');c=[os.path.join(cwd,a,'skills',n) for a in ('.cline','.clinerules','.claude','.agent')]+[os.path.join(h,a,'skills',n) for a in ('.cline','.agent','.claude')];print(next((p for p in c if os.path.isdir(p)),'NOTFOUND'))"
+<PY> -c "import os;n='web-research';cwd=os.getcwd();h=os.path.expanduser('~');c=[os.path.join(cwd,a,'skills',n) for a in ('.cline','.clinerules','.claude','.agents')]+[os.path.join(h,a,'skills',n) for a in ('.cline','.agents','.claude')];print(next((p for p in c if os.path.isdir(p)),'NOTFOUND'))"
 ```
 
 It prints the absolute skill dir; the agent uses that as the base path for every `scripts/...` call.
