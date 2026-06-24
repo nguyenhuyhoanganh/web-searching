@@ -167,7 +167,24 @@ def _merge_metadata(doc, html):
     for key in ("title", "description", "sitename", "date", "language", "keywords", "image"):
         if not doc.get(key):
             doc[key] = meta.get(key, "")
+    doc["jsonld"] = extract_jsonld(html)
     return doc
+
+
+def extract_jsonld(html):
+    """Return parsed JSON-LD objects from <script type="application/ld+json"> blocks (schema.org)."""
+    soup = BeautifulSoup(html, "html.parser")
+    blocks = []
+    for tag in soup.find_all("script", attrs={"type": "application/ld+json"}):
+        raw = (tag.string or tag.get_text() or "").strip()
+        if not raw:
+            continue
+        try:
+            data = json.loads(raw)
+        except (json.JSONDecodeError, ValueError):
+            continue
+        blocks.extend(data if isinstance(data, list) else [data])
+    return blocks
 
 
 def extract_links(html, base_url):

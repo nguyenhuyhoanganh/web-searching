@@ -32,6 +32,8 @@ def _format_doc(doc, output_json, suggest_render):
             out.append(f"{key.capitalize()}: {doc[key]}")
     out.append(f"URL: {doc.get('url', '')}")
     out.append(f"Extraction: {doc.get('method', 'unknown')}")
+    if doc.get("jsonld"):
+        out.append(f"JSON-LD: {len(doc['jsonld'])} block(s) (use --jsonld to dump)")
     out.append("-" * 80)
     out.append(doc.get("content", "No content."))
     if doc.get("truncated"):
@@ -54,6 +56,7 @@ def main():
     parser.add_argument("--selector", "-s", help="CSS selector (forces plain-text extraction)")
     parser.add_argument("--max-length", "-m", type=int, default=MAX_CONTENT_LENGTH)
     parser.add_argument("--links", action="store_true", help="List links instead of content")
+    parser.add_argument("--jsonld", action="store_true", help="Dump JSON-LD structured data instead of content")
     parser.add_argument("--screenshot", help="Save a full-page screenshot to this path (needs render)")
     parser.add_argument("--impersonate", action="store_true",
                         help="Use curl_cffi (real Chrome TLS fingerprint) to bypass TLS-based bot blocks")
@@ -91,6 +94,10 @@ def main():
         else:
             print("No links found." if not links else
                   "\n".join(f"[{i}] {l['text']}\n    {l['url']}" for i, l in enumerate(links, 1)))
+        return
+
+    if args.jsonld:
+        print(json.dumps(extract.extract_jsonld(html), ensure_ascii=False, indent=2))
         return
 
     if pdf.looks_like_pdf(url, result.get("content_type", ""), result.get("content_bytes", b"")):

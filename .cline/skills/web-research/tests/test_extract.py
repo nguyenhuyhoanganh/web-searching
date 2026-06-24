@@ -121,5 +121,22 @@ class TestMetadata(unittest.TestCase):
         self.assertEqual(doc["language"], "fr")
 
 
+@unittest.skipUnless(HAS_BS4, "beautifulsoup4 not installed")
+class TestJsonLd(unittest.TestCase):
+    def test_extracts_jsonld_blocks(self):
+        html = ('<html><head>'
+                '<script type="application/ld+json">{"@type":"Article","headline":"Hello"}</script>'
+                '<script type="application/ld+json">[{"@type":"Person","name":"A"}]</script>'
+                '</head><body><p>x</p></body></html>')
+        blocks = extract.extract_jsonld(html)
+        self.assertEqual(len(blocks), 2)
+        types = {b.get("@type") for b in blocks}
+        self.assertEqual(types, {"Article", "Person"})
+
+    def test_ignores_invalid_jsonld(self):
+        html = '<script type="application/ld+json">not json {</script>'
+        self.assertEqual(extract.extract_jsonld(html), [])
+
+
 if __name__ == "__main__":
     unittest.main()
