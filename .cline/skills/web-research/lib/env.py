@@ -12,6 +12,7 @@ DEP_GROUPS = {
     "extract": [("trafilatura", "trafilatura"), ("markdownify", "markdownify")],
     "render":  [("playwright", "playwright")],
     "pdf":     [("pypdf", "pypdf")],
+    "office":  [("mammoth", "mammoth"), ("openpyxl", "openpyxl")],
     "impersonate": [("curl_cffi", "curl_cffi")],
 }
 

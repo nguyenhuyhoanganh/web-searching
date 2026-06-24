@@ -16,7 +16,7 @@ SKILL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if SKILL_DIR not in sys.path:
     sys.path.insert(0, SKILL_DIR)
 
-from lib import engines, env, extract, http, pdf  # noqa: E402
+from lib import engines, env, extract, http, office, pdf  # noqa: E402
 
 env.force_utf8()
 
@@ -100,10 +100,19 @@ def main():
         print(json.dumps(extract.extract_jsonld(html), ensure_ascii=False, indent=2))
         return
 
+    office_kind = office.looks_like_office(
+        url, result.get("content_type", ""), result.get("content_bytes", b""))
     if pdf.looks_like_pdf(url, result.get("content_type", ""), result.get("content_bytes", b"")):
         try:
             doc = pdf.extract_pdf(result["content_bytes"])
             doc["method"] = "pdf"
+        except RuntimeError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            sys.exit(2)
+    elif office_kind:
+        try:
+            doc = office.extract_office(result["content_bytes"], office_kind)
+            doc["method"] = office_kind
         except RuntimeError as e:
             print(f"Error: {e}", file=sys.stderr)
             sys.exit(2)
