@@ -71,9 +71,12 @@ def main():
     parser.add_argument("--ignore-robots", action="store_true",
                         help="Crawl URLs even if robots.txt disallows them (default: respect robots)")
     parser.add_argument("--proxy", help="Proxy URL (e.g. http://host:port); or set WEB_RESEARCH_PROXY")
+    parser.add_argument("--allow-local", action="store_true",
+                        help="Allow fetching private/loopback addresses (default: refuse)")
     parser.add_argument("--format", choices=["markdown", "json"], default="markdown")
     args = parser.parse_args()
     http.set_proxy(args.proxy)
+    http.set_allow_local(args.allow_local)
     try:
         pages = crawl(args.url, args.max_pages, args.max_depth, args.include_subdomains,
                       args.search, args.render, args.delay, not args.ignore_robots)

@@ -35,6 +35,7 @@ def _curl_cffi_installed():
 
 def _fetch_with_curl(url):
     """Fetch with curl_cffi impersonating a real Chrome TLS/HTTP2 fingerprint (bypasses many blocks)."""
+    http.assert_allowed(url)
     from curl_cffi import requests as cffi_requests
     proxy = http.current_proxy()
     proxies = {"http": proxy, "https": proxy} if proxy else None

@@ -48,5 +48,32 @@ class TestProxy(unittest.TestCase):
         self.assertNotIn("username", cfg)
 
 
+class TestSSRF(unittest.TestCase):
+    def setUp(self):
+        http.set_allow_local(False)
+
+    def tearDown(self):
+        http.set_allow_local(False)
+
+    def test_blocks_loopback(self):
+        with self.assertRaises(http.BlockedURLError):
+            http.assert_allowed("http://127.0.0.1/x")
+
+    def test_blocks_cloud_metadata_ip(self):
+        with self.assertRaises(http.BlockedURLError):
+            http.assert_allowed("http://169.254.169.254/latest/meta-data/")
+
+    def test_blocks_private_range(self):
+        with self.assertRaises(http.BlockedURLError):
+            http.assert_allowed("http://10.0.0.5/")
+
+    def test_public_literal_ip_allowed(self):
+        http.assert_allowed("http://8.8.8.8/")  # public, must not raise
+
+    def test_allow_local_override(self):
+        http.set_allow_local(True)
+        http.assert_allowed("http://127.0.0.1/")  # must not raise when allowed
+
+
 if __name__ == "__main__":
     unittest.main()

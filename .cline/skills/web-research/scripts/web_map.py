@@ -104,9 +104,12 @@ def main():
     parser.add_argument("--limit", type=int, default=200)
     parser.add_argument("--include-subdomains", action="store_true")
     parser.add_argument("--proxy", help="Proxy URL (e.g. http://host:port); or set WEB_RESEARCH_PROXY")
+    parser.add_argument("--allow-local", action="store_true",
+                        help="Allow fetching private/loopback addresses (default: refuse)")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
     http.set_proxy(args.proxy)
+    http.set_allow_local(args.allow_local)
     try:
         urls = map_site(args.url, args.include_subdomains, args.limit, args.search)
         if args.json:

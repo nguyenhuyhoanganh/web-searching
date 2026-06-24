@@ -2,9 +2,14 @@
 
 Optional proxy: set the WEB_RESEARCH_PROXY (or standard HTTPS_PROXY) environment variable, or pass
 --proxy on the CLI. The proxy is applied to requests, curl_cffi, and Playwright alike.
+
+By default fetches to private/loopback/link-local IPs are refused (SSRF guard); pass --allow-local
+to permit them (e.g. to read an internal dev server).
 """
+import ipaddress
 import logging
 import os
+import socket
 import time
 from urllib.parse import urlparse
 
@@ -64,8 +69,51 @@ def playwright_proxy():
     return config
 
 
+# SSRF guard: refuse private/loopback/link-local targets unless explicitly allowed.
+_allow_local = False
+
+
+class BlockedURLError(RuntimeError):
+    """Raised when a URL resolves to a private/loopback address and --allow-local was not set."""
+
+
+def set_allow_local(value):
+    global _allow_local
+    _allow_local = bool(value)
+
+
+def _is_public_ip(ip_str):
+    try:
+        ip = ipaddress.ip_address(ip_str)
+    except ValueError:
+        return False
+    return not (
+        ip.is_private or ip.is_loopback or ip.is_link_local
+        or ip.is_reserved or ip.is_multicast or ip.is_unspecified
+    )
+
+
+def assert_allowed(url):
+    """Raise BlockedURLError if the URL host resolves only to non-public addresses."""
+    if _allow_local:
+        return
+    host = urlparse(url).hostname
+    if not host:
+        return
+    try:
+        addresses = {info[4][0] for info in socket.getaddrinfo(host, None)}
+    except socket.gaierror:
+        return  # let the real request surface a normal DNS error
+    if addresses and not any(_is_public_ip(addr) for addr in addresses):
+        raise BlockedURLError(
+            f"Refusing to fetch {host} -> {sorted(addresses)} (private/loopback address). "
+            "Use --allow-local to override."
+        )
+
+
 def get(url, timeout=30, retries=3):
     """GET a URL, returning a requests.Response. Retries connection/timeout errors with backoff."""
+    assert_allowed(url)
     global _verify_ssl
     last_error = None
     for attempt in range(1, retries + 1):

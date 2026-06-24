@@ -59,9 +59,12 @@ def main():
                         help="Use curl_cffi (real Chrome TLS fingerprint) to bypass TLS-based bot blocks")
     parser.add_argument("--raw", action="store_true", help="BeautifulSoup plain text only")
     parser.add_argument("--proxy", help="Proxy URL (e.g. http://host:port); or set WEB_RESEARCH_PROXY")
+    parser.add_argument("--allow-local", action="store_true",
+                        help="Allow fetching private/loopback addresses (default: refuse)")
     parser.add_argument("--json", action="store_true", help="Output JSON")
     args = parser.parse_args()
     http.set_proxy(args.proxy)
+    http.set_allow_local(args.allow_local)
 
     render = "always" if args.js else args.render
     actions = json.loads(args.actions) if args.actions else None
