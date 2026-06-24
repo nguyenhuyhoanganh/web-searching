@@ -9,8 +9,11 @@ blindly**.
 
 ```
 .cline/skills/web-research/
-├── SKILL.md                  # everything: setup, tools, full flag reference, search strategy, workflow
+├── SKILL.md                  # frontmatter + main instructions (setup, tools, workflow)
 ├── requirements.txt          # recommended baseline deps
+├── reference/
+│   ├── search-strategy.md    # query design, good/bad examples, verification, privacy
+│   └── capabilities.md       # full CLI flag reference
 ├── lib/                      # shared internals (env, http, engines, extract, pdf)
 └── scripts/
     ├── doctor.py             # environment + dependency report
