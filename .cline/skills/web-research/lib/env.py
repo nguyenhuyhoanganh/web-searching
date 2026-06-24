@@ -12,6 +12,7 @@ DEP_GROUPS = {
     "extract": [("trafilatura", "trafilatura"), ("markdownify", "markdownify")],
     "render":  [("playwright", "playwright")],
     "pdf":     [("pypdf", "pypdf")],
+    "impersonate": [("curl_cffi", "curl_cffi")],
 }
 
 # Project- and home-level roots Cline scans for skills (incl. cross-agent .agent).

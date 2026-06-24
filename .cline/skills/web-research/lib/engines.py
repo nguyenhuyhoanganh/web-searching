@@ -7,6 +7,8 @@
 import importlib.util
 import logging
 
+import requests
+
 from lib import http
 
 logger = logging.getLogger("web-research.engines")
@@ -19,12 +21,54 @@ class RenderUnavailable(RuntimeError):
     """Raised when Playwright rendering is requested but the package is not installed."""
 
 
+class ImpersonateUnavailable(RuntimeError):
+    """Raised when TLS impersonation is requested but curl_cffi is not installed."""
+
+
 def _playwright_installed():
     return importlib.util.find_spec("playwright") is not None
 
 
-def fetch_html(url):
-    resp = http.get(url)
+def _curl_cffi_installed():
+    return importlib.util.find_spec("curl_cffi") is not None
+
+
+def _fetch_with_curl(url):
+    """Fetch with curl_cffi impersonating a real Chrome TLS/HTTP2 fingerprint (bypasses many blocks)."""
+    from curl_cffi import requests as cffi_requests
+    proxy = http.current_proxy()
+    proxies = {"http": proxy, "https": proxy} if proxy else None
+    resp = cffi_requests.get(
+        url, impersonate="chrome", timeout=30, allow_redirects=True,
+        headers={"Accept-Language": "en-US,en;q=0.9"}, proxies=proxies,
+    )
+    resp.raise_for_status()
+    return {
+        "html": resp.text,
+        "final_url": str(resp.url),
+        "content_type": resp.headers.get("Content-Type", ""),
+        "content_bytes": resp.content,
+        "engine_used": "curl_cffi",
+    }
+
+
+def fetch_html(url, impersonate=False):
+    """Static fetch. With impersonate=True use curl_cffi; otherwise requests, auto-falling back to
+    curl_cffi on a 403/429 (likely bot-block) when it is installed."""
+    if impersonate:
+        if not _curl_cffi_installed():
+            raise ImpersonateUnavailable(
+                "TLS impersonation needs curl_cffi. Install it with:  pip install curl_cffi"
+            )
+        return _fetch_with_curl(url)
+    try:
+        resp = http.get(url)
+    except requests.exceptions.HTTPError as e:
+        status = getattr(e.response, "status_code", None)
+        if status in (403, 429) and _curl_cffi_installed():
+            logger.info("HTTP %s for %s; retrying with curl_cffi impersonation.", status, url)
+            return _fetch_with_curl(url)
+        raise
     resp.encoding = resp.apparent_encoding or "utf-8"
     return {
         "html": resp.text,
@@ -89,17 +133,18 @@ def _visible_text_len(html):
 
 
 def get_html(url, render="auto", wait_for=None, scroll=0, actions=None,
-             screenshot=None, timeout_ms=30000):
+             screenshot=None, timeout_ms=30000, impersonate=False):
     """Return a fetch/render result dict plus 'suggest_render' (True if a render would likely help).
 
     render: "never" (fetch only), "always" (render), "auto" (fetch, render if it looks JS-gated).
+    impersonate: use curl_cffi (real Chrome TLS fingerprint) for the static fetch.
     """
     if render == "always" or actions or wait_for or screenshot:
         result = render_html(url, wait_for, scroll, actions, screenshot, timeout_ms)
         result["suggest_render"] = False
         return result
 
-    fetched = fetch_html(url)
+    fetched = fetch_html(url, impersonate=impersonate)
     if render == "never":
         fetched["suggest_render"] = False
         return fetched

@@ -55,6 +55,8 @@ def main():
     parser.add_argument("--max-length", "-m", type=int, default=MAX_CONTENT_LENGTH)
     parser.add_argument("--links", action="store_true", help="List links instead of content")
     parser.add_argument("--screenshot", help="Save a full-page screenshot to this path (needs render)")
+    parser.add_argument("--impersonate", action="store_true",
+                        help="Use curl_cffi (real Chrome TLS fingerprint) to bypass TLS-based bot blocks")
     parser.add_argument("--raw", action="store_true", help="BeautifulSoup plain text only")
     parser.add_argument("--proxy", help="Proxy URL (e.g. http://host:port); or set WEB_RESEARCH_PROXY")
     parser.add_argument("--json", action="store_true", help="Output JSON")
@@ -67,9 +69,9 @@ def main():
     try:
         result = engines.get_html(
             args.url, render=render, wait_for=args.wait_for, scroll=args.scroll,
-            actions=actions, screenshot=args.screenshot,
+            actions=actions, screenshot=args.screenshot, impersonate=args.impersonate,
         )
-    except engines.RenderUnavailable as e:
+    except (engines.RenderUnavailable, engines.ImpersonateUnavailable) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(2)
     except Exception as e:

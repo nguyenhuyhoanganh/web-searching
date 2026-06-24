@@ -22,6 +22,7 @@ GROUP_HINTS = {
     "extract": "pip install trafilatura markdownify",
     "render": "pip install playwright   (then: playwright install chromium)",
     "pdf": "pip install pypdf",
+    "impersonate": "pip install curl_cffi",
 }
 
 
