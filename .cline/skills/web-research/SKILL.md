@@ -78,7 +78,9 @@ If a read returns very little content, the page is probably JavaScript-rendered:
 `--render always` (offer to install Playwright first if it is not installed). If a page is blocked as
 a bot (HTTP 403 or a challenge wall), try `--impersonate` (curl_cffi, real Chrome TLS fingerprint) or
 route through a proxy with `--proxy <url>` / the `WEB_RESEARCH_PROXY` env var — offer to install
-curl_cffi first if needed. Full flag reference: [reference/capabilities.md](reference/capabilities.md).
+curl_cffi first if needed. `web_read` also parses PDF/DOCX/XLSX automatically and can dump a page's
+JSON-LD with `--jsonld`; fetches to private/loopback addresses are refused unless you pass
+`--allow-local`. Full flag reference: [reference/capabilities.md](reference/capabilities.md).
 
 ## Reference docs
 

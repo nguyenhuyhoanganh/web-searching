@@ -2,7 +2,7 @@
 
 All commands use `<PY>` (the detected Python) and `<SKILL>` (the located skill folder). Every tool
 also accepts `--proxy URL` (or set the `WEB_RESEARCH_PROXY` / `HTTPS_PROXY` env var) to route requests
-through a proxy.
+through a proxy. Private/loopback addresses are refused by default; add `--allow-local` to permit them.
 
 ## Contents
 - doctor.py — environment & dependency report
@@ -40,11 +40,14 @@ Backends: DDGS API → DuckDuckGo HTML → Google HTML (automatic fallback).
 - `--links` — list links instead of content
 - `--screenshot PATH` — full-page screenshot (implies render)
 - `--impersonate` — use curl_cffi (real Chrome TLS fingerprint) to bypass TLS-based bot blocks
+- `--jsonld` — dump JSON-LD (schema.org) structured data instead of content
+- `--allow-local` — allow private/loopback addresses (refused by default)
 - `--raw` — BeautifulSoup plain text only
 - `--json`
 
-PDFs are detected automatically and parsed with `pypdf` (asks to install if missing). A plain fetch
-that hits HTTP 403/429 auto-retries with curl_cffi impersonation when it is installed.
+PDF, DOCX and XLSX files are detected automatically and parsed (pypdf / mammoth / openpyxl; asks to
+install if missing). A plain fetch that hits HTTP 403/429 auto-retries with curl_cffi impersonation
+when it is installed.
 
 ## web_map.py
 `<PY> "<SKILL>/scripts/web_map.py" "<url>" [flags]`

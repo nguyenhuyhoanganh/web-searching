@@ -37,6 +37,7 @@ pip install requests beautifulsoup4 lxml ddgs trafilatura markdownify
 pip install playwright   # JS rendering / actions
 playwright install chromium
 pip install pypdf        # reading PDFs
+pip install mammoth openpyxl   # reading DOCX / XLSX
 pip install curl_cffi    # bypass TLS-fingerprint bot blocks
 
 # Check your environment
@@ -57,12 +58,15 @@ Requires Python 3.10+ and internet access.
   trafilatura plus `og:`/`article:`/meta tags).
 - **JavaScript rendering** — optional Playwright engine with actions (click, scroll, wait, write,
   press) and screenshots; automatic fallback to static fetch.
-- **PDF parsing** — detected automatically, extracted with pypdf.
+- **PDF & Office parsing** — PDF (pypdf), DOCX (mammoth → Markdown), and XLSX (openpyxl) detected and
+  parsed automatically.
+- **Structured data** — extracts JSON-LD (schema.org) blocks (`web_read --jsonld`).
 - **Full-content search** — `web_search --fetch` returns Markdown for the top results.
 - **Map & crawl** — discover a site's URLs (sitemap.xml, robots.txt sitemaps, `.gz`), or crawl a
   bounded section into Markdown; crawling respects robots.txt by default.
-- **Access options** — route through a proxy (`--proxy` / `WEB_RESEARCH_PROXY`) and optional curl_cffi
-  TLS impersonation (`--impersonate`) to get past corporate proxies and TLS-fingerprint bot blocks.
+- **Access & safety** — route through a proxy (`--proxy` / `WEB_RESEARCH_PROXY`), optional curl_cffi
+  TLS impersonation (`--impersonate`) to get past TLS-fingerprint bot blocks, and an SSRF guard that
+  refuses private/loopback targets (`--allow-local` to override).
 - **Robust fetching** — shared headers, SSL-verify fallback, retry with backoff. UTF-8 output so
   non-ASCII content prints correctly on Windows.
 
@@ -75,6 +79,7 @@ Requires Python 3.10+ and internet access.
 | extract | `trafilatura`, `markdownify` | clean Markdown + metadata |
 | render (optional) | `playwright` | JS pages, actions, screenshots |
 | pdf (optional) | `pypdf` | read PDFs |
+| office (optional) | `mammoth`, `openpyxl` | read DOCX / XLSX |
 | impersonate (optional) | `curl_cffi` | bypass TLS-fingerprint bot blocks |
 | impersonate (optional) | `curl_cffi` | bypass TLS-fingerprint bot blocks |
 
